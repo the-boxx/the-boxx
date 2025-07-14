@@ -6,7 +6,6 @@ import androidx.room.PrimaryKey
 @Entity
 data class Setting(
     val boxxState: Boolean,
-    val currentProfile: Int,
 
     @PrimaryKey(false)
     val id: Int = 0

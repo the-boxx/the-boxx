@@ -30,28 +30,6 @@ class SettingViewModel(
     }
     private val settingDao = settingDb.settingDao
     private val appDao = settingDb.appDao
-//    private val currentState = dao.getBoxxState()
-//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingState())
-
-
-//    private val _state = MutableStateFlow(SettingState())
-//    val state = _state.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Setting(currentState, currentProfile))
-//    private val _settings = MutableStateFlow(SettingState())
-//    val state = combine(_state, _settings) { state, settings ->
-//        state.copy(
-//            settings = settings
-//        )
-//    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingState())
-
-//    private val _state = MutableStateFlow(SettingState())
-//    private val _settings = MutableStateFlow(SettingState().settings)
-//    val state = combine(_state, _settings) { state, settings ->
-//        state.copy(
-//            settings = settings
-//        )
-//    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingState())
-////    private val state = dao.getBoxxState()
-////    private val stateBetter =
 
 //  SETTINGS
     private val _settingState = MutableStateFlow(SettingState(SettingState().settings))
@@ -59,7 +37,6 @@ class SettingViewModel(
     val settingState = combine(_settingState, _settingSettings) { state, settings ->
         state.copy(
             boxxState = settings.boxxState,
-            currentProfile = settings.currentProfile,
             settings = settings
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingState())
@@ -88,7 +65,6 @@ class SettingViewModel(
                     it.copy(
                         isLoading = false,
                         boxxState = currentSettings?.boxxState ?: SettingState().settings.boxxState,
-                        currentProfile = currentSettings?.currentProfile ?: SettingState().settings.currentProfile,
                         settings = currentSettings ?: SettingState().settings
                     )
                 }
@@ -143,22 +119,12 @@ class SettingViewModel(
 
                 }
 
-                is SettingEvent.SetCurrentProfile -> {
-                    _settingState.update {
-                        it.copy(
-                            currentProfile = event.currentProfile
-                        )
-                    }
-                }
-
                 is SettingEvent.SaveSetting -> {
                     if (!_settingState.value.isLoading) {
                         val boxxState = _settingState.value.boxxState
-                        val currentProfile = _settingState.value.currentProfile
 
                         val setting = Setting(
-                            boxxState = boxxState,
-                            currentProfile = currentProfile
+                            boxxState = boxxState
                         )
 
                         Log.d("asand", "Saving setting: $setting")
@@ -181,7 +147,6 @@ class SettingViewModel(
                     if (!_appState.value.isLoading) {
                         val packageName = _appState.value.packageName
                         val allowOperation = _appState.value.allowOperation
-//                        val profiles = _appState.value.app.profiles
 
                         val app = App(packageName = packageName, allowOperation = allowOperation)
                         Log.d("asand", "Saving app: $app")
@@ -217,17 +182,6 @@ class SettingViewModel(
                     }
                 }
 
-//                is SettingEvent.SetAppProfile -> {
-//                    _appState.update {
-//                        val profile = event.profile
-//                        val allProfiles = _appState.value.app.profiles.toMutableList()
-//
-//
-//                        it.copy(
-//                            profiles = allProfiles
-//                        )
-//                    }
-//                }
             }
         }
     }

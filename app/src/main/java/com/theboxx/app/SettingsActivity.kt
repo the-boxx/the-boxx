@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,10 +15,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -30,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -64,29 +67,36 @@ class SettingsActivity() : ComponentActivity() {
 
             val installedApps: List<AppDetail> = AppDetail.getInstalledApps(applicationContext)
 
+            Scaffold(
+                topBar = {BoxxTopAppBar()}
+            )
+            { padding ->
+                if (appState.isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .background(Color.Black)
+                            .fillMaxSize()
+                            .padding(padding),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black)
+                            .padding(padding)
+                    ) {
+                        items(installedApps) { appDetail ->
+                            AppListItem(appDetail, settingsViewModel)
 
-            if (appState.isLoading) {
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = Color.White
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                ) {
-                    items(installedApps) { appDetail ->
-                        AppListItem(appDetail, settingsViewModel, settingsState.currentProfile)
-
+                        }
                     }
                 }
+
             }
 
         }
@@ -99,8 +109,7 @@ class SettingsActivity() : ComponentActivity() {
 @Composable
 fun AppListItem(
     appDetail: AppDetail,
-    settingsViewModel: SettingViewModel,
-    currentProfile: Int
+    settingsViewModel: SettingViewModel
 ) {
 
     var appFromDb by remember { mutableStateOf<App?>(null) }
@@ -183,4 +192,27 @@ fun AppListItem(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BoxxTopAppBar() {
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.primary
+        ),
+        title = {
+            Text("Settings")
+        },
+        actions = {
+            Button(
+                onClick = {
+
+                }
+            ) {
+                Text("Save")
+            }
+        }
+    )
 }

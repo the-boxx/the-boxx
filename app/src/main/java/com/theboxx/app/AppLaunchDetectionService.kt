@@ -1,4 +1,4 @@
-package com.theboxx.app;
+package com.theboxx.app
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
@@ -18,14 +18,6 @@ class AppLaunchDetectionService : AccessibilityService() {
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob) // Use Dispatchers.Main if updating UI, Dispatchers.IO for DB
 
-
-    private val targetPackageNames = setOf(
-            "app.adriel.learns",
-            "de.danoeh.antennapod",
-            "com.adriel.myapplication"
-    )
-
-
     private val whitelistedPackages = WhitelistPackages().whitelistedPackages
 
 //    private var previouslyForegroundPackage: String? = null
@@ -44,29 +36,15 @@ class AppLaunchDetectionService : AccessibilityService() {
                 val className = event.className?.toString()
 
                 if (packageName != null) {
-//                    Log.d(
-//                        "AppLaunchDetector",
-//                        "Window changed: $packageName $className, Source: ${event.source}"
-//                    )
-
                     serviceScope.launch(Dispatchers.IO) {
 
-//                        val currentProfile: Int = settingDb.settingDao.getSettings().firstOrNull()?.currentProfile ?: 0
                         val blockedPackageNames = settingDb.appDao.getBlockedApps()
-//                        Log.d("AppLaunchDetector", "Blocked packages: $blockedPackageNames")
 
 
                         if (blockedPackageNames.find { it.packageName == packageName } != null &&
-//                            packageName != previouslyForegroundPackage &&
                             packageName != applicationContext.packageName
                         ) {
-//                            Log.d("AppLaunchDetector", "App launched: $packageName")
-
-//                            previouslyForegroundPackage = packageName
-
                                 val currentSettings = settingDb.settingDao.getSusSettings()
-                                // Launch Intent to show Block page
-
                                 if (currentSettings?.boxxState == true || currentSettings?.boxxState == null) {
 
                                     val intent = Intent(
@@ -82,10 +60,10 @@ class AppLaunchDetectionService : AccessibilityService() {
                                     Log.d("AppLaunchDetector", "Currently unboxxed... skipping...")
                                 }
 
-                        } else if (packageName != applicationContext.packageName) {
-                            if (blockedPackageNames.find { it.packageName == packageName } == null) {
-//                                previouslyForegroundPackage = packageName
-                            }
+//                        } else if (packageName != applicationContext.packageName) {
+//                            if (blockedPackageNames.find { it.packageName == packageName } == null) {
+////                                previouslyForegroundPackage = packageName
+//                            }
                         }
                     }
                 }

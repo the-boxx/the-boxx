@@ -5,7 +5,6 @@ data class SettingState(
     val settings: Setting = Setting(false, 0),
 
     val boxxState: Boolean = settings.boxxState,
-    val currentProfile: Int = settings.currentProfile,
 
     val isLoading: Boolean = true,
 

@@ -189,7 +189,6 @@ fun BoxxStateView(state: SettingState, onEvent: (SettingEvent) -> Unit) {
                 Button(
                     onClick = {
                         onEvent(SettingEvent.SetBoxxState(!state.boxxState))
-                        onEvent(SettingEvent.SetCurrentProfile(state.currentProfile))
                         onEvent(SettingEvent.SaveSetting)
                     }
                 ) {
@@ -197,29 +196,5 @@ fun BoxxStateView(state: SettingState, onEvent: (SettingEvent) -> Unit) {
                 }
             }
         }
-//        Row {
-//            Text(
-//                text = "Current profile: " + state.currentProfile.toString(),
-//                modifier = Modifier
-//                    .padding(12.dp)
-//            )
-//        }
-//        Row {
-//            Box(
-//                modifier = Modifier
-////                    .fillMaxWidth()
-//            ) {
-//                Button(
-//                    onClick = {
-//                        val profile = state.currentProfile + 1
-//                        onEvent(SettingEvent.SetCurrentProfile(profile))
-//                        onEvent(SettingEvent.SetBoxxState(state.boxxState))
-//                        onEvent(SettingEvent.SaveSetting)
-//                    }
-//                ) {
-//                    Text(text = "Next Profile")
-//                }
-//            }
-//        }
     }
 }
