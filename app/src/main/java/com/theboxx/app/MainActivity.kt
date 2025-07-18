@@ -8,21 +8,17 @@ import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,16 +30,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,11 +52,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.theboxx.app.data.SettingDatabase
 import com.theboxx.app.data.SettingEvent
 import com.theboxx.app.data.SettingState
 import com.theboxx.app.ui.theme.TheBoxxTheme
-import com.theboxx.app.ui.theme.avenirNextFamily
 
 class MainActivity(
     private val eventTriggered: EventTriggered? = null
@@ -207,7 +195,6 @@ fun BoxxStateView(state: SettingState, onEvent: (SettingEvent) -> Unit) {
         Row {
             Text(
                 text = "Current State",
-                //                fontFamily = avenirNextFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
                 modifier = Modifier
@@ -226,7 +213,6 @@ fun BoxxStateView(state: SettingState, onEvent: (SettingEvent) -> Unit) {
                     }
                 Text(
                     text = boxxText,
-                    //                fontFamily = avenirNextFamily,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 28.sp,
                     modifier = Modifier
