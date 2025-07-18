@@ -54,10 +54,6 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
-        <activity android:name=".StateTriggerActivity"
-            android:theme="@style/Theme.TheBoxx">
-
-        </activity>
 
         <activity
             android:name=".SettingsActivity"
