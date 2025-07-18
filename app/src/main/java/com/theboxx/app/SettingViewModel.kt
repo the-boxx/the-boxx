@@ -2,9 +2,20 @@ package com.theboxx.app
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.theboxx.app.data.App
+import com.theboxx.app.data.system.packages.UserApps
 //import com.theboxx.app.data.AppProfile
 import com.theboxx.app.data.AppState
 //import com.theboxx.app.data.AppWithProfiles
@@ -12,14 +23,19 @@ import com.theboxx.app.data.Setting
 import com.theboxx.app.data.SettingDatabase
 import com.theboxx.app.data.SettingEvent
 import com.theboxx.app.data.SettingState
+import com.theboxx.app.data.system.packages.UserAppsPagingSource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingViewModel(
     private val applicationContext: Context
@@ -50,6 +66,50 @@ class SettingViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppState())
 
+    private val _installedAppList = MutableLiveData<List<UserApps>>()
+//    val installedAppList: List<UserApps>
+
+    private val _installedAppListIsLoading = MutableLiveData(true)
+    val installedAppListIsLoading: LiveData<Boolean> = _installedAppListIsLoading
+
+    val installedAppPager = MutableLiveData<Flow<PagingData<UserApps>>>()
+
+    fun loadInstalledApps(context: Context) {
+        viewModelScope.launch {
+            _installedAppListIsLoading.value = true
+            _installedAppList.value = withContext(Dispatchers.IO) {
+                UserApps.getInstalledApps(context)
+            }
+            Log.d("viewmodel", "getinstall apps ${_installedAppList.value}")
+            val installedApps = _installedAppList.value ?: emptyList()
+            installedAppPager.value = Pager(
+                PagingConfig(pageSize = 30)
+            ) {
+                UserAppsPagingSource(context, installedApps)
+            }.flow.cachedIn(viewModelScope)
+
+            Log.d("viewmodel", "Installed Apps: ${installedAppPager.value}")
+            _installedAppListIsLoading.value = false
+        }
+    }
+
+    fun getInstalledAppsPaged(context: Context): Flow<PagingData<UserApps>> {
+
+        viewModelScope.launch {_installedAppListIsLoading.value = true}
+        Log.d("viewmodel", "Loading Apps")
+        loadInstalledApps(context)
+        val installedApps = _installedAppList.value ?: emptyList()
+
+        Log.d("viewmodel", "Installed Apps: ${installedApps}")
+        Log.d("viewmodel", "Loading Pager")
+        val pager = Pager(
+            PagingConfig(pageSize = 20)
+        ) {
+            UserAppsPagingSource(context, installedApps)
+        }.flow.cachedIn(viewModelScope)
+        viewModelScope.launch {_installedAppListIsLoading.value = false}
+        return pager
+    }
 
     init {
         loadSettingsFromDatabase()
@@ -121,19 +181,30 @@ class SettingViewModel(
 
                 is SettingEvent.SaveSetting -> {
                     if (!_settingState.value.isLoading) {
-                        val boxxState = _settingState.value.boxxState
+                        if (_settingState.value.isTrusted) {
 
-                        val setting = Setting(
-                            boxxState = boxxState
-                        )
+                            val boxxState = _settingState.value.boxxState
 
-                        Log.d("asand", "Saving setting: $setting")
+                            val setting = Setting(
+                                boxxState = boxxState
+                            )
 
-                        settingDao.upsertSetting(setting)
+                            Log.d("asand", "Saving setting: $setting")
+
+                            settingDao.upsertSetting(setting)
+                        } else {
+                            Toast.makeText(applicationContext, "Please unlock the boxx first.", Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
 
-                is SettingEvent.SetIsTrusted -> TODO()
+                is SettingEvent.SetIsTrusted -> {
+                    _settingState.update {
+                        it.copy(
+                            isTrusted = event.isTrusted
+                        )
+                    }
+                }
 
                 is SettingEvent.GetApp -> {
                     _appState.update {

@@ -4,6 +4,7 @@ import android.graphics.drawable.Icon
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.theboxx.app.ui.theme.TheBoxxTheme
 import com.theboxx.app.ui.theme.avenirNextFamily
 
 class BlockActivity : ComponentActivity() {
@@ -36,48 +38,46 @@ class BlockActivity : ComponentActivity() {
 
         val launchedPackageName = intent.getStringExtra("LAUNCHED_PACKAGE_NAME")
 
+        enableEdgeToEdge()
         setContent {
-            Image(
-                painter = painterResource(R.drawable.bg),
-                contentDescription = "Background Image",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds
-            )
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
+            TheBoxxTheme {
+                Column(
+                    modifier = Modifier
+                        .background(Color.Black)
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
 
-            ) {
-                Row {
-                    Image(
-                        Icons.Rounded.Close,
-                        contentDescription = "Blocked",
-                        colorFilter = ColorFilter.tint(Color.White),
-                        modifier = Modifier.fillMaxWidth()
-                            .height(150.dp),
-
-                    )
-                }
-                Row {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = if (launchedPackageName != null) {
-                                "We blocked \"$launchedPackageName\" from opening"
-                            } else {
-                                "Error: Blocked, but no package name was provided"
-                            },
-                            modifier = Modifier
-                                .width(LocalConfiguration.current.screenWidthDp.dp - 100.dp),
-                            textAlign = TextAlign.Center,
-                            lineHeight = 22.sp,
-                            fontFamily = avenirNextFamily,
-                            color = Color.White,
+                    Row {
+                        Image(
+                            Icons.Rounded.Close,
+                            contentDescription = "Blocked",
+                            colorFilter = ColorFilter.tint(Color.White),
+                            modifier = Modifier.fillMaxWidth()
+                                .height(150.dp),
 
-                        )
+                            )
+                    }
+                    Row {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (launchedPackageName != null) {
+                                    "We blocked \"$launchedPackageName\" from opening"
+                                } else {
+                                    "Error: Blocked, but no package name was provided"
+                                },
+                                modifier = Modifier
+                                    .width(LocalConfiguration.current.screenWidthDp.dp - 100.dp),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 22.sp,
+                                color = Color.White,
+
+                                )
+                        }
                     }
                 }
             }

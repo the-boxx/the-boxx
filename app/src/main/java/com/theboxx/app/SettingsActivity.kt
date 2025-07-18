@@ -6,46 +6,45 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.theboxx.app.data.App
-import com.theboxx.app.data.AppDetail
-import com.theboxx.app.data.SettingDatabase
+import androidx.lifecycle.viewModelScope
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.theboxx.app.data.SettingEvent
+import com.theboxx.app.data.system.packages.UserApps
+import com.theboxx.app.ui.theme.TheBoxxTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 class SettingsActivity() : ComponentActivity() {
-    private val settingDb by lazy {
-        SettingDatabase.getDatabase(applicationContext)
-    }
 
     private val settingsViewModel by viewModels<SettingViewModel>(
         factoryProducer = {
@@ -62,157 +61,92 @@ class SettingsActivity() : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val settingsState by settingsViewModel.settingState.collectAsState()
-            val appState by settingsViewModel.appState.collectAsState()
+            TheBoxxTheme {
+                Scaffold { padding ->
 
-            val installedApps: List<AppDetail> = AppDetail.getInstalledApps(applicationContext)
+                    val isLoading by settingsViewModel.installedAppListIsLoading.observeAsState(true)
 
-            Scaffold(
-                topBar = {BoxxTopAppBar()}
-            )
-            { padding ->
-                if (appState.isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.Black)
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = Color.White
-                        )
+                    val pager = settingsViewModel.installedAppPager.observeAsState(emptyFlow<PagingData<UserApps>>()).value
+                    LaunchedEffect(Unit) {
+                        settingsViewModel.loadInstalledApps(applicationContext)
                     }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black)
-                            .padding(padding)
-                    ) {
-                        items(installedApps) { appDetail ->
-                            AppListItem(appDetail, settingsViewModel)
 
+                    Log.d("SettingsActivity", "pager: ${pager}")
+
+                    val pagedApps = pager.collectAsLazyPagingItems()
+                    Log.d("SettingsActivity", "pagedApps: ${pagedApps}")
+
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color.White
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .graphicsLayer {}
+                                .fillMaxSize(),
+                            contentPadding = PaddingValues(5.dp),
+
+
+                        ) {
+                            items(pagedApps.itemCount) { index ->
+                                val app = pagedApps[index]
+                                if (app != null) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(75.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+
+                                    ) {
+    //                                    Column {
+    //                                        val icon: Drawable? = app.icon
+    //                                        Image(
+    //                                            icon,
+    //                                            contentDescription = "Icon for ${app.appName}"
+    //                                        )
+    //                                    }
+                                        Column {
+                                            Text(
+                                                text = app.appName,
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                        }
+                                        Column {
+                                            Checkbox(
+                                                checked = app.allowOperation,
+                                                onCheckedChange = {
+                                                    settingsViewModel.onEvent(SettingEvent.SetPackageName(app.packageName))
+                                                    settingsViewModel.onEvent(SettingEvent.SetPackageAllow(!app.allowOperation))
+                                                    settingsViewModel.onEvent(SettingEvent.SaveApp)
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            pagedApps.apply {
+                                when {
+                                    loadState.refresh is LoadState.Loading -> {
+                                        item { CircularProgressIndicator() }
+                                    }
+                                    loadState.append is LoadState.Loading -> {
+                                        item { CircularProgressIndicator() }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-
-            }
-
-        }
-
-
-    }
-
-}
-
-@Composable
-fun AppListItem(
-    appDetail: AppDetail,
-    settingsViewModel: SettingViewModel
-) {
-
-    var appFromDb by remember { mutableStateOf<App?>(null) }
-    var isLoadingApp by remember { mutableStateOf(true) }
-
-    LaunchedEffect(key1 = appDetail.packageName) {
-        isLoadingApp = true
-        Log.d("asand", "Getting app: ${appDetail.packageName}")
-        appFromDb = settingsViewModel.getApp(appDetail.packageName)
-        Log.d("asand", "App from db: $appFromDb")
-        isLoadingApp = false
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Column {
-            if (isLoadingApp) {
-                CircularProgressIndicator()
-            } else {
-                val currentApp: App = appFromDb ?: App(appDetail.packageName)
-//                var currentAppProfile by remember(currentApp, currentProfile) {
-//                    mutableStateOf(currentApp.profiles.find {
-//                        it.profile == currentProfile
-//                    })
-//                }
-                var checkedState by remember(currentApp) {
-                    mutableStateOf(currentApp.allowOperation)
-                }
-
-                Checkbox(
-                    checked = checkedState,
-                    //                                    app.profiles.elementAt(settingsState.currentProfile).allowOperation,
-                    onCheckedChange = { checked ->
-                        // Update status immediately
-                        checkedState = checked
-
-                        Log.d("asand", "Checkbox changed to $checked")
-
-
-
-
-                        settingsViewModel.onEvent(SettingEvent.SetPackageName(appDetail.packageName))
-                        settingsViewModel.onEvent(SettingEvent.SetPackageAllow(checked))
-//                        settingsViewModel.onEvent(
-//                            SettingEvent.SetAppProfile(
-//                                AppProfile(
-//                                    currentProfile,
-//                                    checked,
-//                                    appDetail.packageName
-//                                )
-//                            )
-//                        )
-                        settingsViewModel.onEvent(SettingEvent.SaveApp)
-                    }
-                )
             }
         }
-//        Column {
-//            Icon(
-//                appDetail.icon,
-//                contentDescription = "Icon for ${appDetail.appName}",
-//            )
-//            Image(
-
-//                imageVector = appDetail.icon,
-//                contentDescription = "Icon for ${appDetail.appName}"
-//            )
-//        }
-        Column {
-            Text(
-                text = appDetail.appName,
-                color = Color.White
-            )
-            Text(
-                text = appDetail.packageName,
-                color = Color.White
-            )
-        }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun BoxxTopAppBar() {
-    TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            titleContentColor = MaterialTheme.colorScheme.primary
-        ),
-        title = {
-            Text("Settings")
-        },
-        actions = {
-            Button(
-                onClick = {
-
-                }
-            ) {
-                Text("Save")
-            }
-        }
-    )
 }

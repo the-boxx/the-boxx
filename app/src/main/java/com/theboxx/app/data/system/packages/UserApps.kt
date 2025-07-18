@@ -1,4 +1,4 @@
-package com.theboxx.app.data
+package com.theboxx.app.data.system.packages
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -6,15 +6,16 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.util.Log
 
-data class AppDetail(
+data class UserApps(
     val appName: String,
     val packageName: String,
-    val icon: Drawable?
+    val icon: Drawable?,
+    val allowOperation: Boolean = true
 ) {
     companion object {
-        fun getInstalledApps(context: Context): List<AppDetail> {
+        fun getInstalledApps(context: Context): List<UserApps> {
             val packageManager = context.packageManager
-            val appDetailsList = mutableListOf<AppDetail>()
+            val appDetailsList = mutableListOf<UserApps>()
 
             val applications: List<ApplicationInfo> = try {
                 packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
@@ -28,14 +29,14 @@ data class AppDetail(
                     val appName = packageManager.getApplicationLabel(appInfo).toString()
                     val packageName = appInfo.packageName
                     var icon: Drawable? = null
-                    try {
-                        icon = packageManager.getApplicationIcon(packageName)
-                    } catch (e: PackageManager.NameNotFoundException) {
-                        Log.e("AppList", "No icon found for $packageName", e)
-                    }
+//                    try {
+//                        icon = packageManager.getApplicationIcon(packageName)
+//                    } catch (e: PackageManager.NameNotFoundException) {
+//                        Log.e("AppList", "No icon found for $packageName", e)
+//                    }
 
 
-                    appDetailsList.add(AppDetail(appName, packageName, icon))
+                    appDetailsList.add(UserApps(appName, packageName, icon))
                 }
             }
 
