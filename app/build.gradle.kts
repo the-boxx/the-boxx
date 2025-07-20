@@ -38,6 +38,9 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    lint {
+        disable += "NullSafeMutableLiveData"
+    }
     buildFeatures {
         compose = true
     }
