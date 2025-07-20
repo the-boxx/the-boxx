@@ -23,11 +23,11 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew build
+      run: ./gradlew assembleRelease
       
     - name: Upload artifact
       uses: actions/upload-artifact@v4.6.2
       with:
         name: boxx-nightly.apk
-        path: ./app/release/app-release.apk
+        path: ./app/build/outputs/apk/release/app-release-unsigned.apk
         compression-level: 0
