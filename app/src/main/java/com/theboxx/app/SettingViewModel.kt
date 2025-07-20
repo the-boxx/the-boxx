@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -25,6 +26,8 @@ import com.theboxx.app.data.SettingEvent
 import com.theboxx.app.data.SettingState
 import com.theboxx.app.data.system.packages.UserAppsPagingSource
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,6 +59,8 @@ class SettingViewModel(
             settings = settings
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingState())
+    private var trustTimerJob: Job? = null
+
 
 //  PROFILES and APPS
     private val _appState = MutableStateFlow(AppState())
@@ -74,41 +79,27 @@ class SettingViewModel(
 
     val installedAppPager = MutableLiveData<Flow<PagingData<UserApps>>>()
 
-    fun loadInstalledApps(context: Context) {
+    fun loadInstalledApps(context: Context, appState: AppState) {
         viewModelScope.launch {
             _installedAppListIsLoading.value = true
             _installedAppList.value = withContext(Dispatchers.IO) {
                 UserApps.getInstalledApps(context)
             }
-            Log.d("viewmodel", "getinstall apps ${_installedAppList.value}")
             val installedApps = _installedAppList.value ?: emptyList()
+            val installedAppsCompiled = installedApps.map { app ->
+                app.copy(
+                    allowOperation = appState.apps.find { it.packageName == app.packageName }?.allowOperation ?: true
+                )
+            }
             installedAppPager.value = Pager(
                 PagingConfig(pageSize = 30)
             ) {
-                UserAppsPagingSource(context, installedApps)
+                UserAppsPagingSource(context, installedAppsCompiled)
             }.flow.cachedIn(viewModelScope)
 
             Log.d("viewmodel", "Installed Apps: ${installedAppPager.value}")
             _installedAppListIsLoading.value = false
         }
-    }
-
-    fun getInstalledAppsPaged(context: Context): Flow<PagingData<UserApps>> {
-
-        viewModelScope.launch {_installedAppListIsLoading.value = true}
-        Log.d("viewmodel", "Loading Apps")
-        loadInstalledApps(context)
-        val installedApps = _installedAppList.value ?: emptyList()
-
-        Log.d("viewmodel", "Installed Apps: ${installedApps}")
-        Log.d("viewmodel", "Loading Pager")
-        val pager = Pager(
-            PagingConfig(pageSize = 20)
-        ) {
-            UserAppsPagingSource(context, installedApps)
-        }.flow.cachedIn(viewModelScope)
-        viewModelScope.launch {_installedAppListIsLoading.value = false}
-        return pager
     }
 
     init {
@@ -204,6 +195,20 @@ class SettingViewModel(
                             isTrusted = event.isTrusted
                         )
                     }
+
+                    trustTimerJob?.cancel()
+
+                    if (event.isTrusted) {
+                        trustTimerJob = viewModelScope.launch {
+                            delay(60000L)
+                            _settingState.update {
+                                it.copy(
+                                    isTrusted = false
+                                )
+                            }
+                        }
+                    }
+
                 }
 
                 is SettingEvent.GetApp -> {
@@ -222,7 +227,8 @@ class SettingViewModel(
                         val app = App(packageName = packageName, allowOperation = allowOperation)
                         Log.d("asand", "Saving app: $app")
                         if (allowOperation) {
-                            appDao.deleteApp(app) // Delete unused ones
+                            val appToDelete = App(app.packageName, !app.allowOperation)
+                            appDao.deleteApp(appToDelete) // Delete unused ones
                         } else {
                             appDao.upsertApp(app)
                         }
@@ -255,5 +261,10 @@ class SettingViewModel(
 
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        trustTimerJob?.cancel()
     }
 }

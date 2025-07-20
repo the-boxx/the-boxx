@@ -106,7 +106,7 @@ class MainActivity(
         setContent {
             TheBoxxTheme {
                 val settingState by viewModel.settingState.collectAsState()
-
+                val context = LocalContext.current
                 if (settingState.isLoading) {
                     Box(
                         modifier = Modifier
@@ -119,7 +119,21 @@ class MainActivity(
                         )
                     }
                 } else {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        floatingActionButton = {
+                            FloatingActionButton(
+                                onClick = {
+                                    val intent = Intent(context, SettingsActivity::class.java)
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier
+                                    .padding(20.dp),
+                            ) {
+                                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            }
+                        }
+                    ) { padding ->
                         padding
                         BoxxStateView(settingState, viewModel::onEvent)
                     }
@@ -175,7 +189,6 @@ class MainActivity(
 @Composable
 fun BoxxStateView(state: SettingState, onEvent: (SettingEvent) -> Unit) {
 
-    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -222,29 +235,6 @@ fun BoxxStateView(state: SettingState, onEvent: (SettingEvent) -> Unit) {
         }
     }
     Column(
-        verticalArrangement = Arrangement.Bottom,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp, 0.dp, 10.dp, 24.dp)
-        ) {
-            FloatingActionButton(
-                onClick = {
-                    val intent = Intent(context, SettingsActivity::class.java)
-
-                    context.startActivity(intent)
-                },
-                modifier = Modifier
-                    .padding(20.dp)
-            ) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings")
-            }
-        }
-    }
-    Column(
         modifier = Modifier
 //            .background(backgroundColor)
             .fillMaxSize(),
@@ -273,27 +263,23 @@ fun BoxxStateView(state: SettingState, onEvent: (SettingEvent) -> Unit) {
 
 @Composable
 fun BoxxImage(boxxState: Boolean, onEvent: (SettingEvent) -> Unit) {
+    val animationSpec: AnimationSpec<Dp> = spring(
+        dampingRatio = Spring.DampingRatioLowBouncy,
+        stiffness = Spring.StiffnessLow
+    )
+    val animationSpecFloat: AnimationSpec<Float> = spring(
+        dampingRatio = Spring.DampingRatioLowBouncy,
+        stiffness = Spring.StiffnessLow
+    )
+    val boxxAllOffsetX by animateDpAsState(
+        targetValue = if (boxxState) (0).dp else 20.dp,
+        animationSpec = animationSpec
+    )
     Box(
         modifier = Modifier
             .padding(0.dp, 0.dp, 0.dp, 12.dp)
-            .offset(20.dp),
-        
-
-//        onLongClick = {
-//            onEvent(SettingEvent.SetBoxxState(!state.boxxState))
-//            onEvent(SettingEvent.SaveSetting)
-//        }
+            .offset(x = boxxAllOffsetX),
     ) {
-//        val animationSpec = tween<Dp>(durationMillis = 500)
-        val animationSpec: AnimationSpec<Dp> = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        )
-        val animationSpecFloat: AnimationSpec<Float> = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        )
-
         Image(
             painter = painterResource(R.drawable.boxx_black),
             contentDescription = "Boxx",

@@ -10,7 +10,7 @@ data class UserApps(
     val appName: String,
     val packageName: String,
     val icon: Drawable?,
-    val allowOperation: Boolean = true
+    var allowOperation: Boolean = true
 ) {
     companion object {
         fun getInstalledApps(context: Context): List<UserApps> {
