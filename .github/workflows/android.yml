@@ -20,14 +20,6 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Setup Gradle Cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ hashFiles('**/buildSrc/**/*.kt') }}
-
     - name: Create keystore.properties file for release
       run: |
         echo "storeFile = android.jks" >> keystore.properties
