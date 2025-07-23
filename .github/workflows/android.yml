@@ -20,14 +20,33 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Setup Gradle Cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ hashFiles('**/buildSrc/**/*.kt') }}
+
+    - name: Create keystore.properties file for release
+      run: |
+        echo "storeFile = android.jks" >> keystore.properties
+        echo "storePassword = ${{ secrets.KEYSTORE_PASSWORD }}" >> keystore.properties
+        echo "keyAlias = ${{ secrets.SIGNING_KEY_ALIAS }}" >> keystore.properties
+        echo "keyPassword = ${{ secrets.SIGNING_KEY_PASSWORD }}" >> keystore.properties
+      shell: bash
+
+    - name: Restore android.jks
+      run: echo ${{ secrets.KEYSTORE_FILE }} | base64 -d > app/android.jks
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew assembleRelease
+      run: ./gradlew app:assembleRelease
       
     - name: Upload artifact
       uses: actions/upload-artifact@v4.6.2
       with:
         name: boxx-nightly.apk
-        path: ./app/build/outputs/apk/release/app-release-unsigned.apk
+        path: ./app/build/outputs/apk/release/app-release.apk
         compression-level: 0
