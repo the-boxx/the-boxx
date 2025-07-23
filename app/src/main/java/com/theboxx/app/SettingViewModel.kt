@@ -2,9 +2,6 @@ package com.theboxx.app
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -13,17 +10,13 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
 import com.theboxx.app.data.App
-import com.theboxx.app.data.system.packages.UserApps
-//import com.theboxx.app.data.AppProfile
 import com.theboxx.app.data.AppState
-//import com.theboxx.app.data.AppWithProfiles
 import com.theboxx.app.data.Setting
 import com.theboxx.app.data.SettingDatabase
 import com.theboxx.app.data.SettingEvent
 import com.theboxx.app.data.SettingState
+import com.theboxx.app.data.system.packages.UserApps
 import com.theboxx.app.data.system.packages.UserAppsPagingSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,7 +26,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -172,20 +164,15 @@ class SettingViewModel(
 
                 is SettingEvent.SaveSetting -> {
                     if (!_settingState.value.isLoading) {
-                        if (_settingState.value.isTrusted) {
+                        val boxxState = _settingState.value.boxxState
 
-                            val boxxState = _settingState.value.boxxState
+                        val setting = Setting(
+                            boxxState = boxxState
+                        )
 
-                            val setting = Setting(
-                                boxxState = boxxState
-                            )
+                        Log.d("asand", "Saving setting: $setting")
 
-                            Log.d("asand", "Saving setting: $setting")
-
-                            settingDao.upsertSetting(setting)
-                        } else {
-                            Toast.makeText(applicationContext, "Please unlock the boxx first.", Toast.LENGTH_LONG).show()
-                        }
+                        settingDao.upsertSetting(setting)
                     }
                 }
 

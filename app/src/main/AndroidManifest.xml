@@ -56,15 +56,10 @@
         </activity>
 
         <activity
-            android:name=".SettingsActivity"
-            android:exported="false">
-
-        </activity>
-
-        <activity
             android:name=".BlockActivity"
             android:exported="true"
             android:label="Blocked App Activity"
+            android:launchMode="singleInstancePerTask"
             >
 
         </activity>
