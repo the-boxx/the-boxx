@@ -1,10 +1,9 @@
 package com.theboxx.app.data.system.packages
 
-import android.content.Context
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 
-class UserAppsPagingSource(private val context: Context, private val apps: List<UserApps>) : PagingSource<Int, UserApps>() {
+class UserAppsPagingSource(private val apps: List<UserApps>) : PagingSource<Int, UserApps>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, UserApps> {
         return try {
             val pageIndex = params.key ?: 0

@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.util.Log
+import com.theboxx.app.data.WhitelistPackages
 
 data class UserApps(
     val appName: String,
@@ -24,20 +25,23 @@ data class UserApps(
                 emptyList()
             }
 
+            val whitelistedPackages = WhitelistPackages().whitelistedPackages
+
             for (appInfo in applications) {
-                if ( (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0) {
-                    val appName = packageManager.getApplicationLabel(appInfo).toString()
-                    val packageName = appInfo.packageName
+                val appName = packageManager.getApplicationLabel(appInfo).toString()
+                val packageName = appInfo.packageName
+                if (appName != packageName && !whitelistedPackages.contains(packageName)) {
                     var icon: Drawable? = null
-//                    try {
-//                        icon = packageManager.getApplicationIcon(packageName)
-//                    } catch (e: PackageManager.NameNotFoundException) {
-//                        Log.e("AppList", "No icon found for $packageName", e)
-//                    }
+                    try {
+                        icon = packageManager.getApplicationIcon(packageName)
+                    } catch (e: PackageManager.NameNotFoundException) {
+                        Log.e("AppList", "No icon found for $packageName", e)
+                    }
 
 
                     appDetailsList.add(UserApps(appName, packageName, icon))
                 }
+
             }
 
             appDetailsList.sortBy { it.appName.lowercase() }

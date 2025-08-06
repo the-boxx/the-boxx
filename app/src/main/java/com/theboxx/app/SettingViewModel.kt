@@ -10,12 +10,12 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.theboxx.app.data.App
-import com.theboxx.app.data.AppState
-import com.theboxx.app.data.Setting
-import com.theboxx.app.data.SettingDatabase
-import com.theboxx.app.data.SettingEvent
-import com.theboxx.app.data.SettingState
+import com.theboxx.app.data.app.App
+import com.theboxx.app.data.app.AppState
+import com.theboxx.app.data.settings.Setting
+import com.theboxx.app.data.db.SettingDatabase
+import com.theboxx.app.data.settings.SettingEvent
+import com.theboxx.app.data.settings.SettingState
 import com.theboxx.app.data.system.packages.UserApps
 import com.theboxx.app.data.system.packages.UserAppsPagingSource
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +44,7 @@ class SettingViewModel(
 
 //  SETTINGS
     private val _settingState = MutableStateFlow(SettingState(SettingState().settings))
-    private val _settingSettings: StateFlow<Setting> = settingDao.getSettings().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Setting(false, 0))
+    private val _settingSettings: StateFlow<Setting> = settingDao.getSettings().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingState().settings)
     val settingState = combine(_settingState, _settingSettings) { state, settings ->
         state.copy(
             boxxState = settings.boxxState,
@@ -64,7 +64,6 @@ class SettingViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppState())
 
     private val _installedAppList = MutableLiveData<List<UserApps>>()
-//    val installedAppList: List<UserApps>
 
     private val _installedAppListIsLoading = MutableLiveData(true)
     val installedAppListIsLoading: LiveData<Boolean> = _installedAppListIsLoading
@@ -86,10 +85,9 @@ class SettingViewModel(
             installedAppPager.value = Pager(
                 PagingConfig(pageSize = 30)
             ) {
-                UserAppsPagingSource(context, installedAppsCompiled)
+                UserAppsPagingSource(installedAppsCompiled)
             }.flow.cachedIn(viewModelScope)
 
-            Log.d("viewmodel", "Installed Apps: ${installedAppPager.value}")
             _installedAppListIsLoading.value = false
         }
     }
@@ -108,6 +106,8 @@ class SettingViewModel(
                     it.copy(
                         isLoading = false,
                         boxxState = currentSettings?.boxxState ?: SettingState().settings.boxxState,
+                        tagId = currentSettings?.tagId ?: "",
+                        isOnboarded = currentSettings?.isOnboarded ?: false,
                         settings = currentSettings ?: SettingState().settings
                     )
                 }
@@ -135,39 +135,47 @@ class SettingViewModel(
         }
     }
 
-    suspend fun getApp(packageName: String): App {
-        Log.d("asand", "Getting app: $packageName")
-//        viewModelScope.launch {
-//            _appState.update {
-//                it.copy(
-//                    app = appDao.getApp(packageName) ?: App("", emptyList())
-//                )
-//            }
-//        }
-        return appDao.getApp(packageName) ?: App(packageName)
-    }
-
 
     fun onEvent(event: SettingEvent) {
-//        Log.d("asand", "Event: $event")
         viewModelScope.launch {
             when (event) {
-                is SettingEvent.SetBoxxState -> {
+                is SettingEvent.CompleteOnboarding -> {
                     _settingState.update {
                         it.copy(
-                            boxxState = event.boxxState
-
+                            isOnboarded = event.onboarded
                         )
                     }
-
                 }
+
+                is SettingEvent.SetBoxxState -> {
+                    if (_settingState.value.isTrusted) {
+                        _settingState.update {
+                            it.copy(
+                                boxxState = event.boxxState
+                            )
+                        }
+                    }
+                }
+
+                is SettingEvent.SetTagId -> {
+                    _settingState.update {
+                        it.copy(
+                            tagId = event.tagId
+                        )
+                    }
+                }
+
 
                 is SettingEvent.SaveSetting -> {
                     if (!_settingState.value.isLoading) {
                         val boxxState = _settingState.value.boxxState
+                        val tagId = _settingState.value.tagId
+                        val isOnboarded = _settingState.value.isOnboarded
 
                         val setting = Setting(
-                            boxxState = boxxState
+                            boxxState = boxxState,
+                            tagId = tagId,
+                            isOnboarded = isOnboarded
                         )
 
                         Log.d("asand", "Saving setting: $setting")

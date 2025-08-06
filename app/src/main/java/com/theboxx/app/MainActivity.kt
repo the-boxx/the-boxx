@@ -8,24 +8,20 @@ import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeContent
-import androidx.compose.material3.Scaffold
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.theboxx.app.data.SettingEvent
-import com.theboxx.app.ui.screen.BottomNavigationBar
-import com.theboxx.app.ui.screen.Navigation
+import com.theboxx.app.data.settings.SettingEvent
+import com.theboxx.app.ui.navigation.NavigationScreens
+import com.theboxx.app.ui.navigation.NavigationViewModel
 import com.theboxx.app.ui.theme.TheBoxxTheme
 
-class MainActivity(
-    private val eventTriggered: EventTriggered? = null
-) : ComponentActivity() {
+class MainActivity() : ComponentActivity() {
 
 // NFC
     private var nfcAdapter: NfcAdapter? = null
@@ -48,11 +44,23 @@ class MainActivity(
 
     }
 
-    private val viewModel by viewModels<SettingViewModel>(
+    @Suppress("UNCHECKED_CAST")
+    private val settingViewModel by viewModels<SettingViewModel>(
         factoryProducer = {
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return SettingViewModel(applicationContext) as T
+                }
+            }
+        }
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    private val navigationViewModel by viewModels<NavigationViewModel>(
+        factoryProducer = {
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return NavigationViewModel() as T
                 }
             }
         }
@@ -67,7 +75,7 @@ class MainActivity(
         enableEdgeToEdge()
         setContent {
             TheBoxxTheme {
-                Navigation(viewModel)
+                MainApplication(applicationContext, settingViewModel, navigationViewModel)
             }
         }
     }
@@ -96,11 +104,27 @@ class MainActivity(
         nfcAdapter?.disableForegroundDispatch(this)
     }
 
+    private fun bytesToHexString(src: ByteArray?): String? {
+        val stringBuilder = StringBuilder("0x")
+        if (src == null || src.isEmpty()) {
+            return null
+        }
+
+        val buffer = CharArray(2)
+        for (i in src.indices) {
+            buffer[0] = Character.forDigit((src[i].toInt() ushr 4) and 0x0F, 16)
+            buffer[1] = Character.forDigit(src[i].toInt() and 0x0F, 16)
+            println(buffer)
+            stringBuilder.append(buffer)
+        }
+
+        return stringBuilder.toString()
+    }
+
     private fun processNfcIntent(intent: Intent) {
         val action = intent.action
         if (NfcAdapter.ACTION_NDEF_DISCOVERED == action ||
-            NfcAdapter.ACTION_TECH_DISCOVERED == action ||
-            NfcAdapter.ACTION_TAG_DISCOVERED == action) {
+            NfcAdapter.ACTION_TECH_DISCOVERED == action) {
             val tag: Tag? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
             } else {
@@ -108,10 +132,32 @@ class MainActivity(
                 intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
             }
 
-            tag?.id ?: "unknown"
-            viewModel.onEvent(SettingEvent.SetBoxxState(!viewModel.settingState.value.boxxState))
-            viewModel.onEvent(SettingEvent.SaveSetting)
-            Toast.makeText(this, "Switched Boxx State", Toast.LENGTH_SHORT).show()
+            val tagId = bytesToHexString(tag?.id)
+
+            Log.d("NfcReading", "Tag id: $tagId")
+
+            val currentScreen = navigationViewModel.navigationState.value.currentScreen
+
+            if (currentScreen == NavigationScreens.Status) {
+                if (tagId == settingViewModel.settingState.value.tagId) {
+                    settingViewModel.onEvent(SettingEvent.SetIsTrusted(true))
+
+                    settingViewModel.onEvent(SettingEvent.SetBoxxState(!settingViewModel.settingState.value.boxxState))
+                    settingViewModel.onEvent(SettingEvent.SaveSetting)
+//                    Toast.makeText(this, "Switched Boxx State", Toast.LENGTH_SHORT).show()
+                    settingViewModel.onEvent(SettingEvent.SetIsTrusted(false))
+                } else {
+                    Toast.makeText(this, "Incorrect tag scanned", Toast.LENGTH_LONG).show()
+                }
+            } else if (currentScreen == NavigationScreens.Settings.NfcTag ||
+                currentScreen == NavigationScreens.Onboarding.Nfc) {
+                if (!settingViewModel.settingState.value.boxxState) {
+                    settingViewModel.onEvent(SettingEvent.SetTagId(tagId))
+                    settingViewModel.onEvent(SettingEvent.SaveSetting)
+
+                    Toast.makeText(this, "NFC Tag has been set", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

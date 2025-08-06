@@ -1,4 +1,4 @@
-package com.theboxx.app.data
+package com.theboxx.app.data.app
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

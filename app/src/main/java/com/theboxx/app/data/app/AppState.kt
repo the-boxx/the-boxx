@@ -1,4 +1,4 @@
-package com.theboxx.app.data
+package com.theboxx.app.data.app
 
 data class AppState(
     val apps: List<App> = emptyList(),

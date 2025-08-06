@@ -1,4 +1,4 @@
-package com.theboxx.app.data
+package com.theboxx.app.data.settings
 
 import androidx.room.Dao
 import androidx.room.Delete

@@ -1,20 +1,21 @@
 [versions]
 agp = "8.11.1"
-kotlin = "2.0.0"
-coreKtx = "1.15.0"
+coilCompose = "3.3.0"
+kotlin = "2.2.0"
+coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 kotlinxSerializationJson = "1.8.1"
 navigationCompose = "2.9.2"
-lifecycleRuntimeKtx = "2.8.7"
-activityCompose = "1.10.0"
-composeBom = "2024.04.01"
+lifecycleRuntimeKtx = "2.9.2"
+activityCompose = "1.10.1"
+composeBom = "2025.07.00"
 lifecycleViewmodelKtx = "2.9.2"
 pagingRuntime = "3.3.6"
-roomKtx = "2.7.1"
+roomKtx = "2.7.2"
 runtimeLivedata = "1.8.3"
-sqliteFramework = "2.5.1"
+sqliteFramework = "2.5.2"
 appcompat = "1.7.1"
 
 [libraries]
@@ -28,6 +29,7 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
 androidx-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "runtimeLivedata" }
 androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteFramework" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

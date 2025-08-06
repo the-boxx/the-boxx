@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,7 +38,6 @@ import com.theboxx.app.SettingViewModel
 @Composable
 fun StatusScreen(padding: PaddingValues, viewModel: SettingViewModel) {
     val settingState by viewModel.settingState.collectAsState()
-    val onEvent = viewModel::onEvent
     if (settingState.isLoading) {
         Box(
             modifier = Modifier
@@ -50,34 +51,11 @@ fun StatusScreen(padding: PaddingValues, viewModel: SettingViewModel) {
             )
         }
     } else {
-//        Scaffold(
-//            contentWindowInsets = WindowInsets.safeContent,
-//            modifier = Modifier.fillMaxSize(),
-//            floatingActionButton = {
-//                FloatingActionButton(
-//                    onClick = {
-//                        navController.navigate(Screens.SettingsScreen)
-////                        val intent = Intent(context, SettingsActivity::class.java)
-////                        context.startActivity(intent)
-//                    },
-//                    modifier = Modifier
-//                        .padding(20.dp),
-//                ) {
-//                    Icon(Icons.Default.Settings, contentDescription = "Settings")
-//                }
-//            }
-//        ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(padding),
-//                .clickable(
-//                    enabled = true,
-//                    onClickLabel = "Switch Boxx State",
-//                    onClick = {
-//                        onEvent(SettingEvent.SetBoxxState(!settingState.boxxState))
-//                        onEvent(SettingEvent.SaveSetting)
-//                    }),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -113,31 +91,7 @@ fun StatusScreen(padding: PaddingValues, viewModel: SettingViewModel) {
                 }
             }
         }
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize(),
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Bottom,
-//        ) {
-//
-//            Row {
-//                Box {
-//                    AnimatedContent(
-//                        targetState = settingState.isTrusted,
-//                    ) { isTrusted ->
-//                        Icon(
-//                            painter = painterResource(if (isTrusted) R.drawable.lock_open_48px else R.drawable.lock_48px),
-//                            contentDescription = "Lock",
-//                            tint = Color(0xDDFFFFFF),
-//                            modifier = Modifier
-//                                .padding(48.dp)
-//                        )
-//                    }
-//                }
-//            }
-//        }
         }
-//    }
 }
 
 @Composable

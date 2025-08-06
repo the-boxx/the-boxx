@@ -2,6 +2,7 @@ package com.theboxx.app.data
 
 data class WhitelistPackages(
     val whitelistedPackages: Set<String> = setOf(
+        "com.theboxx.app",
         "com.android.systemui",
         "com.samsung.accessibility",
         "com.samsung.android.biometrics.app.setting",

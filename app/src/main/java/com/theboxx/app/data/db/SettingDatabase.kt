@@ -1,4 +1,4 @@
-package com.theboxx.app.data
+package com.theboxx.app.data.db
 
 import android.content.Context
 import androidx.room.Database
@@ -6,6 +6,11 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import com.theboxx.app.data.settings.Setting
+import com.theboxx.app.data.settings.SettingDao
+import com.theboxx.app.data.settings.SettingState
+import com.theboxx.app.data.app.App
+import com.theboxx.app.data.app.AppDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

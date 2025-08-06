@@ -5,7 +5,7 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import com.theboxx.app.data.SettingDatabase
+import com.theboxx.app.data.db.SettingDatabase
 import com.theboxx.app.data.WhitelistPackages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
