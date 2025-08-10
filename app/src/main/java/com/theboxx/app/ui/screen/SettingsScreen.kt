@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -21,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
@@ -34,8 +34,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,6 +58,7 @@ import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil3.compose.AsyncImage
+import com.theboxx.app.BottomNavigationBar
 import com.theboxx.app.SettingViewModel
 import com.theboxx.app.data.settings.SettingEvent
 import com.theboxx.app.ui.navigation.NavigationScreens
@@ -73,8 +77,8 @@ data class SettingsScreenMainItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreenMain(padding: PaddingValues, navController: NavController, viewModel: SettingViewModel) {
-    val settingState = viewModel.settingState.collectAsState()
+fun SettingsScreenMain(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+    val settingState = settingViewModel.settingState.collectAsState()
     val boxxState = settingState.value.boxxState
 
     val settingsScreenMainItems = listOf(
@@ -107,60 +111,92 @@ fun SettingsScreenMain(padding: PaddingValues, navController: NavController, vie
         )
     )
 
-    Column(
-        modifier = Modifier
-            .padding(padding)
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-    ) {
-        for (item in settingsScreenMainItems) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(70.dp)
-                    .padding(horizontal = 15.dp)
-                    .clickable(
-                        enabled = item.enabled,
-                        onClick = {
-                            navController.navigate(item.screen)
-                        }
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Column(
+    Scaffold(
+//        bottomBar = { BottomNavigationBar(navController, navigationViewModel) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            for (item in settingsScreenMainItems) {
+                Row(
                     modifier = Modifier
-                        .weight(1f),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxWidth()
+                        .height(70.dp)
+                        .padding(horizontal = 15.dp)
+                        .clickable(
+                            enabled = item.enabled,
+                            onClick = {
+                                navController.navigate(item.screen)
+                            }
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.title
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .weight(9f)
-                ) {
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = if(item.enabled) 1f else 0.5f)
-                    )
-                    Text(
-                        text = item.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = if(item.enabled) 0.9f else 0.45f)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.title
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(9f)
+                    ) {
+                        Text(
+                            text = item.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = if (item.enabled) 1f else 0.5f)
+                        )
+                        Text(
+                            text = item.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = if (item.enabled) 0.9f else 0.45f)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreenApps(padding: PaddingValues, navController: NavController, settingViewModel: SettingViewModel, navigationViewModel: NavigationViewModel) {
+fun TopSettingsAppBar(navController: NavController, navigationViewModel: NavigationViewModel) {
+    val navigationState = navigationViewModel.navigationState.value
+    val currentScreen = navigationState.currentScreen
+    val isAppSearchEnabled = navigationState.isAppSearchEnabled
+
+    TopAppBar(
+        title = {
+            Text(
+                text = currentScreen.title
+            )
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = {
+                    navController.navigateUp()
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Go Back"
+                )
+            }
+        }
+    )
+}
+
+
+@Composable
+fun SettingsScreenApps(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
 
     val context = LocalContext.current
     val isLoading by settingViewModel.installedAppListIsLoading.observeAsState(true)
@@ -179,143 +215,145 @@ fun SettingsScreenApps(padding: PaddingValues, navController: NavController, set
 
     val lazyListState = rememberLazyListState()
 
-    if (isLoading) {
-        Column (
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CircularProgressIndicator(
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-    } else {
-        Box {
-            LazyColumn(
+    Scaffold(
+        topBar = { TopSettingsAppBar(navController, navigationViewModel) }
+    ) { padding ->
+        if (isLoading) {
+            Column(
                 modifier = Modifier
-                    .padding(8.dp)
-                    .background(MaterialTheme.colorScheme.background)
-                    .fillMaxSize(),
-                state = lazyListState,
-                contentPadding = padding,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .fillMaxSize()
+                    .padding(padding),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (isOnboarding) {
-                    item {
-                        Card {
-                            Text(
-                                text = "Apps that are deselected here will be blocked when the device is Boxxed.",
-                                modifier = Modifier
-                                    .padding(12.dp)
-                            )
-                            Button(
-                                onClick = {
-                                    navController.navigate(NavigationScreens.Onboarding.EmergencyUnlock)
-                                },
-                                modifier = Modifier
-                                    .padding(12.dp)
-                            ) {
-                                Text("Next")
-                            }
-                        }
-                    }
-                }
-                items(pagedApps.itemCount) { index ->
-                    val app = pagedApps[index]
-                    if (app != null) {
-                        val allowOperation = remember { mutableStateOf(app.allowOperation) }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainer)
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .weight(2f)
-                            ) {
-                                AsyncImage(
-                                    model = app.icon,
-                                    contentDescription = "Icon for ${app.appName}",
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .padding(10.dp, 0.dp)
-                                )
-                            }
-                            Column(
-                                modifier = Modifier
-                                    .weight(9f),
-                            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        } else {
+            Box {
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxSize(),
+                    state = lazyListState,
+                    contentPadding = padding,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (isOnboarding) {
+                        item {
+                            Card {
                                 Text(
-                                    text = app.appName,
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    text = "Apps that are deselected here will be blocked when the device is Boxxed.",
                                     modifier = Modifier
-                                        .padding(vertical = 1.dp)
+                                        .padding(12.dp)
                                 )
-                                Text(
-                                    text = app.packageName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier
-                                        .padding(vertical = 1.dp)
-                                )
-                            }
-                            Column(
-                                modifier = Modifier
-                                    .weight(1.5f)
-                            ) {
-                                Checkbox(
-                                    checked = allowOperation.value,
-                                    onCheckedChange = {
-                                        allowOperation.value = !allowOperation.value
-                                        settingViewModel.onEvent(SettingEvent.SetPackageName(app.packageName))
-                                        settingViewModel.onEvent(
-                                            SettingEvent.SetPackageAllow(
-                                                allowOperation.value
-                                            )
-                                        )
-                                        settingViewModel.onEvent(SettingEvent.SaveApp)
+                                Button(
+                                    onClick = {
+                                        navController.navigate(NavigationScreens.Onboarding.EmergencyUnlock)
                                     },
                                     modifier = Modifier
-                                        .width(36.dp)
-                                )
+                                        .padding(12.dp)
+                                ) {
+                                    Text("Next")
+                                }
+                            }
+                        }
+                    }
+                    items(pagedApps.itemCount) { index ->
+                        val app = pagedApps[index]
+                        if (app != null) {
+                            val allowOperation = remember { mutableStateOf(app.allowOperation) }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .weight(2f)
+                                ) {
+                                    AsyncImage(
+                                        model = app.icon,
+                                        contentDescription = "Icon for ${app.appName}",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier
+                                            .size(60.dp)
+                                            .padding(10.dp, 0.dp)
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier
+                                        .weight(9f),
+                                ) {
+                                    Text(
+                                        text = app.appName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier
+                                            .padding(vertical = 1.dp)
+                                    )
+                                    Text(
+                                        text = app.packageName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .padding(vertical = 1.dp)
+                                    )
+                                }
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1.5f)
+                                ) {
+                                    Checkbox(
+                                        checked = allowOperation.value,
+                                        onCheckedChange = {
+                                            allowOperation.value = !allowOperation.value
+                                            settingViewModel.onEvent(SettingEvent.SetPackageName(app.packageName))
+                                            settingViewModel.onEvent(
+                                                SettingEvent.SetPackageAllow(
+                                                    allowOperation.value
+                                                )
+                                            )
+                                            settingViewModel.onEvent(SettingEvent.SaveApp)
+                                        },
+                                        modifier = Modifier
+                                            .width(36.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    pagedApps.apply {
+                        when {
+                            loadState.refresh is LoadState.Loading -> {
+                                item { CircularProgressIndicator() }
+                            }
+
+                            loadState.append is LoadState.Loading -> {
+                                item { CircularProgressIndicator() }
                             }
                         }
                     }
                 }
-
-                pagedApps.apply {
-                    when {
-                        loadState.refresh is LoadState.Loading -> {
-                            item { CircularProgressIndicator() }
+                FloatingActionButton(
+                    onClick = {
+                        settingViewModel.viewModelScope.launch {
+                            lazyListState.scrollToItem(0)
                         }
-
-                        loadState.append is LoadState.Loading -> {
-                            item { CircularProgressIndicator() }
-                        }
-                    }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(WindowInsets.safeContent.asPaddingValues())
+                        .padding(bottom = 24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowUp,
+                        contentDescription = "Go to top"
+                    )
                 }
-            }
-            FloatingActionButton(
-                onClick = {
-                    settingViewModel.viewModelScope.launch {
-                        lazyListState.scrollToItem(0)
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(WindowInsets.safeContent.asPaddingValues())
-                    .padding(bottom = 24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = "Go to top"
-                )
             }
         }
     }
@@ -323,119 +361,128 @@ fun SettingsScreenApps(padding: PaddingValues, navController: NavController, set
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreenEmergencyUnlock(padding: PaddingValues, navController: NavController, viewModel: SettingViewModel) {
+fun SettingsScreenEmergencyUnlock(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
 
-    val openDialog = remember { mutableStateOf(false) }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(padding),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        Text("Emergency Unlock")
-        Button(
-            onClick = {
-                openDialog.value = true
-            }
+    Scaffold(
+        topBar = { TopSettingsAppBar(navController, navigationViewModel) }
+    ) { padding ->
+        val openDialog = remember { mutableStateOf(false) }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Do it!")
-        }
-        if (openDialog.value) {
-            BasicAlertDialog (
-                onDismissRequest = {
-                    openDialog.value = false
-                },
-                properties = DialogProperties()
+            Text("Emergency Unlock")
+            Button(
+                onClick = {
+                    openDialog.value = true
+                }
             ) {
-                Card {
-                    Text(
-                        text = "Are you sure?",
-                        modifier = Modifier
-                            .padding(12.dp)
-                    )
-                    Row(
-                        modifier = Modifier
-                            .padding(12.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                openDialog.value = false
-                            },
+                Text("Do it!")
+            }
+            if (openDialog.value) {
+                BasicAlertDialog(
+                    onDismissRequest = {
+                        openDialog.value = false
+                    },
+                    properties = DialogProperties()
+                ) {
+                    Card {
+                        Text(
+                            text = "Are you sure?",
+                            modifier = Modifier
+                                .padding(12.dp)
+                        )
+                        Row(
                             modifier = Modifier
                                 .padding(12.dp)
                         ) {
-                            Text("Cancel")
-                        }
-                        Button(
-                            onClick = {
-                                openDialog.value = false
-                                navController.navigate(NavigationScreens.Status) {
-                                    popUpTo(NavigationScreens.Settings.EmergencyUnlock) {
-                                        inclusive = true
+                            Button(
+                                onClick = {
+                                    openDialog.value = false
+                                },
+                                modifier = Modifier
+                                    .padding(12.dp)
+                            ) {
+                                Text("Cancel")
+                            }
+                            Button(
+                                onClick = {
+                                    openDialog.value = false
+                                    navController.navigate(NavigationScreens.Status) {
+                                        popUpTo(NavigationScreens.Settings.EmergencyUnlock) {
+                                            inclusive = true
+                                        }
                                     }
-                                }
-                                viewModel.onEvent(SettingEvent.SetIsTrusted(true))
-                                viewModel.onEvent(SettingEvent.SetBoxxState(false))
-                                viewModel.onEvent(SettingEvent.SaveSetting)
-                                viewModel.onEvent(SettingEvent.SetIsTrusted(false))
-                            },
-                            modifier = Modifier
-                                .padding(12.dp)
-                        ) {
-                            Text(
-                                text = "Yes"
-                            )
+                                    settingViewModel.onEvent(SettingEvent.SetIsTrusted(true))
+                                    settingViewModel.onEvent(SettingEvent.SetBoxxState(false))
+                                    settingViewModel.onEvent(SettingEvent.SaveSetting)
+                                    settingViewModel.onEvent(SettingEvent.SetIsTrusted(false))
+                                },
+                                modifier = Modifier
+                                    .padding(12.dp)
+                            ) {
+                                Text(
+                                    text = "Yes"
+                                )
+                            }
                         }
                     }
-                }
 
+                }
             }
         }
     }
 }
 
 @Composable
-fun SettingsScreenNfcTag(padding: PaddingValues, viewModel: SettingViewModel) {
-    val settingsState = viewModel.settingState.collectAsState().value
+fun SettingsScreenNfcTag(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+    val settingsState = settingViewModel.settingState.collectAsState().value
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(padding),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Scan your NFC Tag",
-            style = MaterialTheme.typography.titleMedium
-        )
+    Scaffold(
+        topBar = { TopSettingsAppBar(navController, navigationViewModel)}
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Scan your NFC Tag",
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
     }
 }
 
 @Composable
-fun SettingsScreenRestartOnboarding(padding: PaddingValues, navController: NavController, viewModel: SettingViewModel) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(padding),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        Text("Would you like te restart onboarding?")
-        Button(
-            onClick = {
-                viewModel.onEvent(SettingEvent.CompleteOnboarding(false))
-                viewModel.onEvent(SettingEvent.SaveSetting)
-                navController.navigate(NavigationScreens.Onboarding) {
-                    popUpTo(NavigationScreens.Settings.RestartOnboarding) { inclusive = true }
-                }
-            }
+fun SettingsScreenRestartOnboarding(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+    Scaffold(
+        topBar = { TopSettingsAppBar(navController, navigationViewModel)}
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Yep!")
+            Text("Would you like te restart onboarding?")
+            Button(
+                onClick = {
+                    settingViewModel.onEvent(SettingEvent.CompleteOnboarding(false))
+                    settingViewModel.onEvent(SettingEvent.SaveSetting)
+                    navController.navigate(NavigationScreens.Onboarding) {
+                        popUpTo(NavigationScreens.Settings.RestartOnboarding) { inclusive = true }
+                    }
+                }
+            ) {
+                Text("Yep!")
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.theboxx.app
 
+import android.annotation.SuppressLint
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -18,8 +20,10 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
@@ -36,6 +40,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -44,8 +49,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntSize
 import androidx.navigation.NavBackStackEntry
@@ -78,195 +88,120 @@ import com.theboxx.app.ui.screen.StatusScreen
 @Composable
 fun MainApplication(context: Context, settingViewModel: SettingViewModel, navigationViewModel: NavigationViewModel) {
     val navController = rememberNavController()
+    val navigationState = navigationViewModel.navigationState.collectAsState().value
+    val currentScreen = navigationState.currentScreen
 
     val isOnboarded = settingViewModel.settingState.collectAsState().value.isOnboarded
     val startScreen = if (isOnboarded) NavigationScreens.Status else NavigationScreens.Onboarding
+    val bottomNavCondition = (currentScreen == NavigationScreens.Status ||
+            currentScreen == NavigationScreens.Settings ||
+            currentScreen == NavigationScreens.Settings.Main ||
+            currentScreen == NavigationScreens.Info)
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     Scaffold(
-        topBar = { TopBoxxAppBar(navController, settingViewModel, navigationViewModel) },
         contentWindowInsets = WindowInsets.Companion.safeDrawing,
-        bottomBar = { if (isOnboarded) BottomNavigationBar(navController, navigationViewModel) },
+        bottomBar = {
+            AnimatedContent(bottomNavCondition) { bottomNavCondition ->
+                if (bottomNavCondition) {
+                    BottomNavigationBar(navController, navigationViewModel)
+                }
+            }
+        },
     ) { padding ->
         NavHost(
             navController = navController,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.background),
             startDestination = startScreen,
-            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
-            exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
-            popEnterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) },
-            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End) }
-        ) {
-            navigation<NavigationScreens.Onboarding>(startDestination = NavigationScreens.Onboarding.Main) {
-                screen(
-                    screenObject = NavigationScreens.Onboarding.Main,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    OnboardingScreenMain(padding, navController, settingViewModel)
+                enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
+                exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
+                popEnterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) },
+                popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End) }
+            ) {
+                navigation<NavigationScreens.Onboarding>(startDestination = NavigationScreens.Onboarding.Main) {
+                    screen(
+                        screenObject = NavigationScreens.Onboarding.Main,
+                        navigationViewModel = navigationViewModel
+                    ) {
+                        OnboardingScreenMain(navController)
                 }
                 screen(
                     screenObject = NavigationScreens.Onboarding.Accessibility,
                     navigationViewModel = navigationViewModel
                 ) {
-                    OnboardingScreenAccessibility(padding, navController, settingViewModel, context)
+                    OnboardingScreenAccessibility(navController, navigationViewModel, settingViewModel, context)
                 }
                 screen(
                     screenObject = NavigationScreens.Onboarding.Nfc,
                     navigationViewModel = navigationViewModel
                 ) {
-                    OnboardingScreenNfcTag(padding, navController, settingViewModel)
+                    OnboardingScreenNfcTag(navController, navigationViewModel, settingViewModel)
                 }
                 screen(
                     screenObject = NavigationScreens.Onboarding.Apps,
                     navigationViewModel = navigationViewModel
                 ) {
                     OnboardingScreenApps(
-                        padding,
                         navController,
-                        settingViewModel,
-                        navigationViewModel
+                        navigationViewModel,
+                        settingViewModel
                     )
                 }
                 screen(
                     screenObject = NavigationScreens.Onboarding.EmergencyUnlock,
                     navigationViewModel = navigationViewModel
                 ) {
-                    OnboardingScreenEmergencyUnlock(padding, navController, settingViewModel)
+                    OnboardingScreenEmergencyUnlock(navController, navigationViewModel, settingViewModel)
                 }
             }
             homeScreen(
                 screenObject = NavigationScreens.Status,
                 navigationViewModel = navigationViewModel
             ) {
-                StatusScreen(padding, settingViewModel)
+                StatusScreen(navController, navigationViewModel, settingViewModel)
             }
             homeScreen(
                 screenObject = NavigationScreens.Info,
                 navigationViewModel = navigationViewModel
             ) {
-                InfoScreen(padding)
+                InfoScreen(navController, navigationViewModel)
             }
             navigation<NavigationScreens.Settings>(startDestination = NavigationScreens.Settings.Main) {
                 homeScreen(
                     screenObject = NavigationScreens.Settings.Main,
                     navigationViewModel = navigationViewModel
                 ) {
-                    SettingsScreenMain(padding, navController, settingViewModel)
+                    SettingsScreenMain(navController, navigationViewModel, settingViewModel)
                 }
                 screen(
                     screenObject = NavigationScreens.Settings.Apps,
                     navigationViewModel = navigationViewModel
                 ) {
                     SettingsScreenApps(
-                        padding,
                         navController,
-                        settingViewModel,
-                        navigationViewModel
+                        navigationViewModel,
+                        settingViewModel
                     )
                 }
                 screen(
                     screenObject = NavigationScreens.Settings.EmergencyUnlock,
                     navigationViewModel = navigationViewModel
                 ) {
-                    SettingsScreenEmergencyUnlock(padding, navController, settingViewModel)
+                    SettingsScreenEmergencyUnlock(navController, navigationViewModel, settingViewModel)
                 }
                 screen(
                     screenObject = NavigationScreens.Settings.NfcTag,
                     navigationViewModel = navigationViewModel
                 ) {
-                    SettingsScreenNfcTag(padding, settingViewModel)
+                    SettingsScreenNfcTag(navController, navigationViewModel, settingViewModel)
                 }
                 screen(
                     screenObject = NavigationScreens.Settings.RestartOnboarding,
                     navigationViewModel = navigationViewModel
                 ) {
-                    SettingsScreenRestartOnboarding(padding, navController, settingViewModel)
+                    SettingsScreenRestartOnboarding(navController, navigationViewModel, settingViewModel)
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBoxxAppBar(navController: NavController, settingViewModel: SettingViewModel, navigationViewModel: NavigationViewModel) {
-    val navigationState = navigationViewModel.navigationState.collectAsState().value
-    val currentScreen = navigationState.currentScreen
-    val isAppSearchEnabled = navigationState.isAppSearchEnabled
-
-    val topBarConditionScreens = listOf(
-        NavigationScreens.Onboarding, NavigationScreens.Onboarding.Main,
-        NavigationScreens.Status, NavigationScreens.Settings, NavigationScreens.Settings.Main,
-        NavigationScreens.Info).contains(currentScreen)
-    if (isAppSearchEnabled) {
-        SearchBar(
-            inputField = {
-
-            },
-            expanded = true,
-            onExpandedChange = {}
-        ) {
-
-        }
-    } else {
-        AnimatedContent(topBarConditionScreens) { topBarConditionScreens ->
-            if (!topBarConditionScreens) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = currentScreen.title
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                navController.navigateUp()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Go Back",
-                            )
-                        }
-                    },
-                    actions = {
-                        val dropdownConditionScreens = listOf(
-                            NavigationScreens.Onboarding.Nfc,
-                            NavigationScreens.Onboarding.Apps,
-                            NavigationScreens.Onboarding.EmergencyUnlock
-                        ).contains(currentScreen)
-                        val dropdownMenuEnabled = remember { mutableStateOf(false) }
-                        if (dropdownConditionScreens) {
-                            Box {
-                                IconButton(
-                                    onClick = {
-                                        dropdownMenuEnabled.value = !dropdownMenuEnabled.value
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.MoreVert,
-                                        contentDescription = "Other options"
-                                    )
-                                }
-                                DropdownMenu(
-                                    expanded = dropdownMenuEnabled.value,
-                                    onDismissRequest = {
-                                        dropdownMenuEnabled.value = false
-                                    }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text("Skip tutorial")
-                                        },
-                                        onClick = {
-                                            settingViewModel.onEvent(SettingEvent.CompleteOnboarding())
-                                            settingViewModel.onEvent(SettingEvent.SaveSetting)
-                                            navController.navigate(NavigationScreens.Status)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                )
             }
         }
     }
@@ -306,12 +241,12 @@ fun BottomNavigationBar(navController: NavController, navigationViewModel: Navig
         )
     )
 
-//    var selectedItemIndex by rememberSaveable {
-//        mutableIntStateOf(0)
-//    }
-//    var previousSelectedItemIndex by rememberSaveable {
-//        mutableIntStateOf(0)
-//    }
+    var selectedItemIndex by rememberSaveable {
+        mutableIntStateOf(0)
+    }
+    var previousSelectedItemIndex by rememberSaveable {
+        mutableIntStateOf(0)
+    }
 
     NavigationBar {
         val navigationState = navigationViewModel.navigationState.collectAsState()
@@ -320,10 +255,13 @@ fun BottomNavigationBar(navController: NavController, navigationViewModel: Navig
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
-//                    previousSelectedItemIndex = selectedItemIndex
-//                    selectedItemIndex = index
-                    navController.navigate(item.screen) {
-                        launchSingleTop = true
+                    previousSelectedItemIndex = selectedItemIndex
+                    selectedItemIndex = index
+                    if (!isSelected) {
+                        navController.navigate(item.screen) {
+                            launchSingleTop = true
+                            popUpTo(bottomNavigationBarItems[previousSelectedItemIndex].screen)
+                        }
                     }
 
                 },
@@ -344,34 +282,12 @@ fun BottomNavigationBar(navController: NavController, navigationViewModel: Navig
 
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 inline fun <reified S : Screen> NavGraphBuilder.screen(
     screenObject: S,
     navigationViewModel: NavigationViewModel,
     crossinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
-    val enterTransition =
-        fadeIn() +
-        slideInHorizontally(animationSpec = tween(350), initialOffsetX = { 1000 })
-
-    val exitTransition =
-        fadeOut() +
-        slideOutHorizontally(animationSpec = tween(350), targetOffsetX = { -1000 })
-
-    val popEnterTransition =
-        fadeIn() +
-        slideInHorizontally(animationSpec = tween(350), initialOffsetX = { -1000 })
-
-    val popExitTransition =
-        fadeOut() +
-        slideOutHorizontally(animationSpec = tween(350), targetOffsetX = { 1000 })
-
-    composable<S>(
-//        enterTransition = {enterTransition},
-//        exitTransition = {exitTransition},
-//        popEnterTransition = {popEnterTransition},
-//        popExitTransition = {popExitTransition}
-    ) { navBackStackEntry ->
+    composable<S> { navBackStackEntry ->
         navigationViewModel.onEvent(NavigationEvent.SetCurrentScreen(screenObject))
         content(navBackStackEntry)
     }
@@ -383,11 +299,6 @@ inline fun <reified S : Screen> NavGraphBuilder.homeScreen(
     navigationViewModel: NavigationViewModel,
     crossinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
-    val previousScreen: Screen = navigationViewModel.navigationState.value.currentScreen
-
-    val sameScreen = false
-
-
     val enterTransition =
         fadeIn() +
         scaleIn(initialScale = 0.7f)
@@ -405,12 +316,11 @@ inline fun <reified S : Screen> NavGraphBuilder.homeScreen(
         scaleOut(targetScale = 0.7f)
 
     composable<S>(
-//        enterTransition = {if (!sameScreen) enterTransition else EnterTransition.None},
-//        exitTransition = {if (!sameScreen) exitTransition else ExitTransition.None},
-//        popEnterTransition = {if (!sameScreen) popEnterTransition else EnterTransition.None},
-//        popExitTransition = {if (!sameScreen) popExitTransition else ExitTransition.None}
+        enterTransition = {enterTransition},
+        exitTransition = {exitTransition},
+        popEnterTransition = {popEnterTransition},
+        popExitTransition = {popExitTransition}
     ) { navBackStackEntry ->
-
         navigationViewModel.onEvent(NavigationEvent.SetCurrentScreen(screenObject))
         content(navBackStackEntry)
     }

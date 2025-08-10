@@ -11,19 +11,24 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -33,67 +38,138 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.theboxx.app.BottomNavigationBar
 import com.theboxx.app.R
 import com.theboxx.app.SettingViewModel
+import com.theboxx.app.data.settings.SettingEvent
+import com.theboxx.app.ui.navigation.NavigationViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatusScreen(padding: PaddingValues, viewModel: SettingViewModel) {
-    val settingState by viewModel.settingState.collectAsState()
-    if (settingState.isLoading) {
-        Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(
-                color = Color.White
-            )
-        }
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Row {
-                BoxxImage(settingState.boxxState)
-            }
-            Row {
-                Text(
-                    text = "Current State",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
-                    modifier = Modifier
-                        .padding(12.dp, 36.dp, 12.dp, 0.dp)
+fun StatusScreen(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+    val settingState by settingViewModel.settingState.collectAsState()
+    Scaffold(
+//        bottomBar = { BottomNavigationBar(navController, navigationViewModel) }
+    ) { padding ->
+        if (settingState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Black)
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White
                 )
             }
-            Row {
-                AnimatedContent(
-                    targetState = settingState.boxxState,
-                ) { boxxState ->
-                    val boxxText: String =
-                        if (boxxState) {
-                            "Boxxed"
-                        } else {
-                            "Un-Boxxed"
-                        }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(padding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Row {
+                    BoxxImage(settingState.boxxState)
+                }
+                Row {
                     Text(
-                        text = boxxText,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 28.sp,
+                        text = "Current State",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp,
                         modifier = Modifier
-                            .padding(12.dp, 6.dp)
+                            .padding(12.dp, 36.dp, 12.dp, 0.dp)
                     )
+                }
+                Row {
+                    AnimatedContent(
+                        targetState = settingState.boxxState,
+                    ) { boxxState ->
+                        val boxxText: String =
+                            if (boxxState) {
+                                "Boxxed"
+                            } else {
+                                "Un-Boxxed"
+                            }
+                        Text(
+                            text = boxxText,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 28.sp,
+                            modifier = Modifier
+                                .padding(12.dp, 6.dp)
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .padding(top = 12.dp)
+                ) {
+                    AnimatedContent(
+                        settingState.boxxState
+                    ) { boxxState ->
+                        val openDialog = remember { mutableStateOf(false) }
+                        if (!boxxState) {
+                            Button(
+                                onClick = {
+                                    openDialog.value = true
+                                }
+                            ) {
+                                Text("Boxx Now")
+                            }
+                            if (openDialog.value) {
+                                BasicAlertDialog(
+                                    onDismissRequest = {
+                                        openDialog.value = false
+                                    }
+                                ) {
+                                    Card {
+                                        Text(
+                                            text = "Are you sure you'd like to boxx your device? " +
+                                                "You will not be able to un-boxx without your boxx.",
+                                            modifier = Modifier
+                                                .padding(12.dp)
+                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .padding(12.dp)
+                                        ) {
+                                            Button(
+                                                onClick = {
+                                                    openDialog.value = false
+                                                },
+                                                modifier = Modifier
+                                                    .padding(12.dp)
+                                            ) {
+                                                Text("Cancel")
+                                            }
+                                            Button(
+                                                onClick = {
+                                                    settingViewModel.onEvent(SettingEvent.SetIsTrusted(true))
+                                                    settingViewModel.onEvent(SettingEvent.SetBoxxState(true))
+                                                    settingViewModel.onEvent(SettingEvent.SaveSetting)
+                                                    settingViewModel.onEvent(SettingEvent.SetIsTrusted(false))
+                                                },
+                                                modifier = Modifier
+                                                    .padding(12.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Yes"
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-        }
+    }
 }
 
 @Composable
