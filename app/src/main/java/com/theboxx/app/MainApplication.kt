@@ -2,6 +2,12 @@ package com.theboxx.app
 
 import android.content.Context
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
@@ -317,12 +323,22 @@ fun BottomNavigationBar(navController: NavController, navigationViewModel: Navig
 
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 inline fun <reified S : Screen> NavGraphBuilder.screen(
     screenObject: S,
     navigationViewModel: NavigationViewModel,
     crossinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
-    composable<S> { navBackStackEntry ->
+    val enterTransition =
+        slideInHorizontally(animationSpec = tween(350), initialOffsetX = { 1000 })
+
+    val exitTransition =
+        slideOutHorizontally(animationSpec = tween(350), targetOffsetX = { 1000 })
+
+    composable<S>(
+        enterTransition = {enterTransition},
+        exitTransition = {exitTransition}
+    ) { navBackStackEntry ->
         navigationViewModel.onEvent(NavigationEvent.SetCurrentScreen(screenObject))
         content(navBackStackEntry)
     }
