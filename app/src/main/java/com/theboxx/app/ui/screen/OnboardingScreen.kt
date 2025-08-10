@@ -3,8 +3,6 @@ package com.theboxx.app.ui.screen
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import android.text.TextUtils
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.theboxx.app.AppLaunchDetectionService
 import com.theboxx.app.R
 import com.theboxx.app.SettingViewModel
 import com.theboxx.app.data.settings.SettingEvent
@@ -97,26 +94,63 @@ fun OnboardingScreenMain(padding: PaddingValues, navController: NavController, v
     }
 }
 
-private fun isAccessibilityServiceEnabled(context: Context, serviceComponentIdentifier: String): Boolean {
-    val accessibilityEnabled = try {
-        Settings.Secure.getInt(context.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED)
-    } catch (e: Settings.SettingNotFoundException) {
-        Log.e("AccessibilityCheck", "ACCESSIBILITY_ENABLED setting not found", e)
-    }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopOnboardingAppBar(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+    val navigationState = navigationViewModel.navigationState.collectAsState().value
+    val currentScreen = navigationState.currentScreen
 
-    if (accessibilityEnabled == 0) {
-        Log.d("AccessibilityCheck", "Accessibility is globally disabled.")
-        return false
-    }
-
-    val enabledServicesSetting = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-    if (enabledServicesSetting == null) {
-        return false
-    }
-    val colonSplitter = TextUtils.SimpleStringSplitter(':')
-    colonSplitter.setString(enabledServicesSetting)
-
-    return colonSplitter.contains(serviceComponentIdentifier)
+    TopAppBar(
+        title = {
+            Text(
+                text = currentScreen.title
+            )
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = {
+                    navController.navigateUp()
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Go Back"
+                )
+            }
+        },
+        actions = {
+            val dropdownMenuEnabled = remember { mutableStateOf(false) }
+            Box {
+                IconButton(
+                    onClick = {
+                        dropdownMenuEnabled.value = !dropdownMenuEnabled.value
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Other options"
+                    )
+                }
+                DropdownMenu(
+                    expanded = dropdownMenuEnabled.value,
+                    onDismissRequest = {
+                        dropdownMenuEnabled.value = false
+                    }
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("Skip tutorial")
+                        },
+                        onClick = {
+                            settingViewModel.onEvent(SettingEvent.CompleteOnboarding())
+                            settingViewModel.onEvent(SettingEvent.SaveSetting)
+                            navController.navigate(NavigationScreens.Status)
+                        }
+                    )
+                }
+            }
+        }
+    )
 }
 
 @Composable
@@ -126,12 +160,10 @@ fun OnboardingScreenAccessibility(padding: PaddingValues, navController: NavCont
         mutableStateOf(false)
     }
 
-    val serviceComponentIdentifier = "${context.packageName}/${AppLaunchDetectionService::class.java.name}"
-
     LaunchedEffect(Unit) {
         viewModel.viewModelScope.launch {
             while (!hasAccessibilityPermission.value) {
-                val permission = isAccessibilityServiceEnabled(context, serviceComponentIdentifier)
+                val permission = isAccessibilityServiceEnabled(context)
                 hasAccessibilityPermission.value = permission
                 delay(1000L)
             }
