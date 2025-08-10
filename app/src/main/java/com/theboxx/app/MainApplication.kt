@@ -64,103 +64,101 @@ fun MainApplication(context: Context, settingViewModel: SettingViewModel, naviga
     val isOnboarded = settingViewModel.settingState.collectAsState().value.isOnboarded
     val startScreen = if (isOnboarded) NavigationScreens.Status else NavigationScreens.Onboarding
 
-    Scaffold(
-        topBar = { TopBoxxAppBar(navController, settingViewModel, navigationViewModel) },
-        contentWindowInsets = WindowInsets.Companion.safeDrawing,
-        bottomBar = { if (isOnboarded) BottomNavigationBar(navController, navigationViewModel) },
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = startScreen
+//    Scaffold(
+//        topBar = { TopBoxxAppBar(navController, settingViewModel, navigationViewModel) },
+//        contentWindowInsets = WindowInsets.Companion.safeDrawing,
+//        bottomBar = { if (isOnboarded) BottomNavigationBar(navController, navigationViewModel) },
+//    ) { padding ->
+    NavHost(
+        navController = navController,
+        startDestination = startScreen
+    ) {
+        navigation<NavigationScreens.Onboarding>(startDestination = NavigationScreens.Onboarding.Main) {
+            screen(
+                screenObject = NavigationScreens.Onboarding.Main,
+                navigationViewModel = navigationViewModel
+            ) {
+                OnboardingScreenMain(navController)
+            }
+            screen(
+                screenObject = NavigationScreens.Onboarding.Accessibility,
+                navigationViewModel = navigationViewModel
+            ) {
+                OnboardingScreenAccessibility(navController, navigationViewModel, settingViewModel, context)
+            }
+            screen(
+                screenObject = NavigationScreens.Onboarding.Nfc,
+                navigationViewModel = navigationViewModel
+            ) {
+                OnboardingScreenNfcTag(navController, navigationViewModel, settingViewModel)
+            }
+            screen(
+                screenObject = NavigationScreens.Onboarding.Apps,
+                navigationViewModel = navigationViewModel
+            ) {
+                OnboardingScreenApps(
+                    navController,
+                    navigationViewModel,
+                    settingViewModel
+                )
+            }
+            screen(
+                screenObject = NavigationScreens.Onboarding.EmergencyUnlock,
+                navigationViewModel = navigationViewModel
+            ) {
+                OnboardingScreenEmergencyUnlock(navController, navigationViewModel, settingViewModel)
+            }
+        }
+        screen(
+            screenObject = NavigationScreens.Status,
+            navigationViewModel = navigationViewModel
         ) {
-            navigation<NavigationScreens.Onboarding>(startDestination = NavigationScreens.Onboarding.Main) {
-                screen(
-                    screenObject = NavigationScreens.Onboarding.Main,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    OnboardingScreenMain(padding, navController, settingViewModel)
-                }
-                screen(
-                    screenObject = NavigationScreens.Onboarding.Accessibility,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    OnboardingScreenAccessibility(padding, navController, settingViewModel, context)
-                }
-                screen(
-                    screenObject = NavigationScreens.Onboarding.Nfc,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    OnboardingScreenNfcTag(padding, navController, settingViewModel)
-                }
-                screen(
-                    screenObject = NavigationScreens.Onboarding.Apps,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    OnboardingScreenApps(
-                        padding,
-                        navController,
-                        settingViewModel,
-                        navigationViewModel
-                    )
-                }
-                screen(
-                    screenObject = NavigationScreens.Onboarding.EmergencyUnlock,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    OnboardingScreenEmergencyUnlock(padding, navController, settingViewModel)
-                }
-            }
+            StatusScreen(navController, navigationViewModel, settingViewModel)
+        }
+        screen(
+            screenObject = NavigationScreens.Info,
+            navigationViewModel = navigationViewModel
+        ) {
+            InfoScreen(navController, navigationViewModel)
+        }
+        navigation<NavigationScreens.Settings>(startDestination = NavigationScreens.Settings.Main) {
             screen(
-                screenObject = NavigationScreens.Status,
+                screenObject = NavigationScreens.Settings.Main,
                 navigationViewModel = navigationViewModel
             ) {
-                StatusScreen(padding, settingViewModel)
+                SettingsScreenMain(navController, navigationViewModel, settingViewModel)
             }
             screen(
-                screenObject = NavigationScreens.Info,
+                screenObject = NavigationScreens.Settings.Apps,
                 navigationViewModel = navigationViewModel
             ) {
-                InfoScreen(padding)
+                SettingsScreenApps(
+                    navController,
+                    navigationViewModel,
+                    settingViewModel
+                )
             }
-            navigation<NavigationScreens.Settings>(startDestination = NavigationScreens.Settings.Main) {
-                screen(
-                    screenObject = NavigationScreens.Settings.Main,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    SettingsScreenMain(padding, navController, settingViewModel)
-                }
-                screen(
-                    screenObject = NavigationScreens.Settings.Apps,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    SettingsScreenApps(
-                        padding,
-                        navController,
-                        settingViewModel,
-                        navigationViewModel
-                    )
-                }
-                screen(
-                    screenObject = NavigationScreens.Settings.EmergencyUnlock,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    SettingsScreenEmergencyUnlock(padding, navController, settingViewModel)
-                }
-                screen(
-                    screenObject = NavigationScreens.Settings.NfcTag,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    SettingsScreenNfcTag(padding, settingViewModel)
-                }
-                screen(
-                    screenObject = NavigationScreens.Settings.RestartOnboarding,
-                    navigationViewModel = navigationViewModel
-                ) {
-                    SettingsScreenRestartOnboarding(padding, navController, settingViewModel)
-                }
+            screen(
+                screenObject = NavigationScreens.Settings.EmergencyUnlock,
+                navigationViewModel = navigationViewModel
+            ) {
+                SettingsScreenEmergencyUnlock(navController, navigationViewModel, settingViewModel)
+            }
+            screen(
+                screenObject = NavigationScreens.Settings.NfcTag,
+                navigationViewModel = navigationViewModel
+            ) {
+                SettingsScreenNfcTag(navController, navigationViewModel, settingViewModel)
+            }
+            screen(
+                screenObject = NavigationScreens.Settings.RestartOnboarding,
+                navigationViewModel = navigationViewModel
+            ) {
+                SettingsScreenRestartOnboarding(navController, navigationViewModel, settingViewModel)
             }
         }
     }
+//    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
