@@ -3,6 +3,7 @@ package com.theboxx.app.ui.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -13,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,55 +25,49 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import com.theboxx.app.BottomNavigationBar
 import com.theboxx.app.R
-import com.theboxx.app.ui.navigation.NavigationViewModel
 
 @Composable
-fun InfoScreen(navController: NavController, navigationViewModel: NavigationViewModel) {
+fun InfoScreen(padding: PaddingValues) {
 
-    Scaffold(
-        bottomBar = { BottomNavigationBar(navController, navigationViewModel) }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(padding),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.boxx_single),
-                        contentDescription = "The Boxx Icon",
-                        modifier = Modifier.padding(24.dp)
-                    )
-                    Text(
-                        text = "The Boxx",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 28.sp,
-                    )
-                    Text(
-                        text = "Technology to control your technology",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .height(100.dp)
-                    .padding(24.dp),
-                verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(padding),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                //            Column(
-                //                modifier = Modifier.padding(36.dp)
-                //            ) {
+                Image(
+                    painter = painterResource(R.drawable.boxx_single),
+                    contentDescription = "The Boxx Icon",
+                    modifier = Modifier.padding(24.dp)
+                )
+                Text(
+                    text = "The Boxx",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 28.sp,
+                )
+                Text(
+                    text = "Technology to control your technology",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        Row(
+            modifier = Modifier
+                .height(100.dp)
+                .padding(24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+//            Column(
+//                modifier = Modifier.padding(36.dp)
+//            ) {
                 Icon(
                     imageVector = Icons.Filled.Build,
                     tint = MaterialTheme.colorScheme.primary,
@@ -92,8 +86,7 @@ fun InfoScreen(navController: NavController, navigationViewModel: NavigationView
                     },
                     color = MaterialTheme.colorScheme.primary
                 )
-                //            }
-            }
+//            }
         }
     }
 

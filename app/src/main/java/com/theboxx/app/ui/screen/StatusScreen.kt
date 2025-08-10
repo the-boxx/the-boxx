@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,73 +32,66 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import com.theboxx.app.BottomNavigationBar
 import com.theboxx.app.R
 import com.theboxx.app.SettingViewModel
-import com.theboxx.app.ui.navigation.NavigationViewModel
 
 @Composable
-fun StatusScreen(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
-    val settingState by settingViewModel.settingState.collectAsState()
-    Scaffold(
-        bottomBar = { BottomNavigationBar(navController, navigationViewModel) }
-    ) { padding ->
-        if (settingState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .background(Color.Black)
-                    .padding(padding)
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    color = Color.White
+fun StatusScreen(padding: PaddingValues, viewModel: SettingViewModel) {
+    val settingState by viewModel.settingState.collectAsState()
+    if (settingState.isLoading) {
+        Box(
+            modifier = Modifier
+                .background(Color.Black)
+                .padding(padding)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(
+                color = Color.White
+            )
+        }
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(padding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Row {
+                BoxxImage(settingState.boxxState)
+            }
+            Row {
+                Text(
+                    text = "Current State",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .padding(12.dp, 36.dp, 12.dp, 0.dp)
                 )
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(padding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Row {
-                    BoxxImage(settingState.boxxState)
-                }
-                Row {
+            Row {
+                AnimatedContent(
+                    targetState = settingState.boxxState,
+                ) { boxxState ->
+                    val boxxText: String =
+                        if (boxxState) {
+                            "Boxxed"
+                        } else {
+                            "Un-Boxxed"
+                        }
                     Text(
-                        text = "Current State",
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
+                        text = boxxText,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 28.sp,
                         modifier = Modifier
-                            .padding(12.dp, 36.dp, 12.dp, 0.dp)
+                            .padding(12.dp, 6.dp)
                     )
-                }
-                Row {
-                    AnimatedContent(
-                        targetState = settingState.boxxState,
-                    ) { boxxState ->
-                        val boxxText: String =
-                            if (boxxState) {
-                                "Boxxed"
-                            } else {
-                                "Un-Boxxed"
-                            }
-                        Text(
-                            text = boxxText,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 28.sp,
-                            modifier = Modifier
-                                .padding(12.dp, 6.dp)
-                        )
-                    }
                 }
             }
         }
-    }
+        }
 }
 
 @Composable
