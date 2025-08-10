@@ -1,15 +1,26 @@
 package com.theboxx.app
 
 import android.content.Context
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.IntSize
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -77,7 +89,11 @@ fun MainApplication(context: Context, settingViewModel: SettingViewModel, naviga
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = startScreen
+            startDestination = startScreen,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
+            exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start) },
+            popEnterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End) }
         ) {
             navigation<NavigationScreens.Onboarding>(startDestination = NavigationScreens.Onboarding.Main) {
                 screen(
@@ -116,20 +132,20 @@ fun MainApplication(context: Context, settingViewModel: SettingViewModel, naviga
                     OnboardingScreenEmergencyUnlock(padding, navController, settingViewModel)
                 }
             }
-            screen(
+            homeScreen(
                 screenObject = NavigationScreens.Status,
                 navigationViewModel = navigationViewModel
             ) {
                 StatusScreen(padding, settingViewModel)
             }
-            screen(
+            homeScreen(
                 screenObject = NavigationScreens.Info,
                 navigationViewModel = navigationViewModel
             ) {
                 InfoScreen(padding)
             }
             navigation<NavigationScreens.Settings>(startDestination = NavigationScreens.Settings.Main) {
-                screen(
+                homeScreen(
                     screenObject = NavigationScreens.Settings.Main,
                     navigationViewModel = navigationViewModel
                 ) {
@@ -178,7 +194,8 @@ fun TopBoxxAppBar(navController: NavController, settingViewModel: SettingViewMod
 
     val topBarConditionScreens = listOf(
         NavigationScreens.Onboarding, NavigationScreens.Onboarding.Main,
-        NavigationScreens.Status, NavigationScreens.Settings, NavigationScreens.Info).contains(currentScreen)
+        NavigationScreens.Status, NavigationScreens.Settings, NavigationScreens.Settings.Main,
+        NavigationScreens.Info).contains(currentScreen)
     if (isAppSearchEnabled) {
         SearchBar(
             inputField = {
@@ -190,65 +207,67 @@ fun TopBoxxAppBar(navController: NavController, settingViewModel: SettingViewMod
 
         }
     } else {
-        if (!topBarConditionScreens) {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = currentScreen.title
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            navController.navigateUp()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go Back",
+        AnimatedContent(topBarConditionScreens) { topBarConditionScreens ->
+            if (!topBarConditionScreens) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = currentScreen.title
                         )
-                    }
-                },
-                actions = {
-                    val dropdownConditionScreens = listOf(
-                        NavigationScreens.Onboarding.Nfc,
-                        NavigationScreens.Onboarding.Apps,
-                        NavigationScreens.Onboarding.EmergencyUnlock
-                    ).contains(currentScreen)
-                    val dropdownMenuEnabled = remember { mutableStateOf(false) }
-                    if (dropdownConditionScreens) {
-                        Box {
-                            IconButton(
-                                onClick = {
-                                    dropdownMenuEnabled.value = !dropdownMenuEnabled.value
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Other options"
-                                )
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                navController.navigateUp()
                             }
-                            DropdownMenu(
-                                expanded = dropdownMenuEnabled.value,
-                                onDismissRequest = {
-                                    dropdownMenuEnabled.value = false
-                                }
-                            ) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text("Skip tutorial")
-                                    },
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Go Back",
+                            )
+                        }
+                    },
+                    actions = {
+                        val dropdownConditionScreens = listOf(
+                            NavigationScreens.Onboarding.Nfc,
+                            NavigationScreens.Onboarding.Apps,
+                            NavigationScreens.Onboarding.EmergencyUnlock
+                        ).contains(currentScreen)
+                        val dropdownMenuEnabled = remember { mutableStateOf(false) }
+                        if (dropdownConditionScreens) {
+                            Box {
+                                IconButton(
                                     onClick = {
-                                        settingViewModel.onEvent(SettingEvent.CompleteOnboarding())
-                                        settingViewModel.onEvent(SettingEvent.SaveSetting)
-                                        navController.navigate(NavigationScreens.Status)
+                                        dropdownMenuEnabled.value = !dropdownMenuEnabled.value
                                     }
-                                )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "Other options"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = dropdownMenuEnabled.value,
+                                    onDismissRequest = {
+                                        dropdownMenuEnabled.value = false
+                                    }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text("Skip tutorial")
+                                        },
+                                        onClick = {
+                                            settingViewModel.onEvent(SettingEvent.CompleteOnboarding())
+                                            settingViewModel.onEvent(SettingEvent.SaveSetting)
+                                            navController.navigate(NavigationScreens.Status)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -332,15 +351,66 @@ inline fun <reified S : Screen> NavGraphBuilder.screen(
     crossinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
     val enterTransition =
+        fadeIn() +
         slideInHorizontally(animationSpec = tween(350), initialOffsetX = { 1000 })
 
     val exitTransition =
+        fadeOut() +
+        slideOutHorizontally(animationSpec = tween(350), targetOffsetX = { -1000 })
+
+    val popEnterTransition =
+        fadeIn() +
+        slideInHorizontally(animationSpec = tween(350), initialOffsetX = { -1000 })
+
+    val popExitTransition =
+        fadeOut() +
         slideOutHorizontally(animationSpec = tween(350), targetOffsetX = { 1000 })
 
     composable<S>(
-        enterTransition = {enterTransition},
-        exitTransition = {exitTransition}
+//        enterTransition = {enterTransition},
+//        exitTransition = {exitTransition},
+//        popEnterTransition = {popEnterTransition},
+//        popExitTransition = {popExitTransition}
     ) { navBackStackEntry ->
+        navigationViewModel.onEvent(NavigationEvent.SetCurrentScreen(screenObject))
+        content(navBackStackEntry)
+    }
+}
+
+@OptIn(ExperimentalAnimationApi::class)
+inline fun <reified S : Screen> NavGraphBuilder.homeScreen(
+    screenObject: S,
+    navigationViewModel: NavigationViewModel,
+    crossinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+) {
+    val previousScreen: Screen = navigationViewModel.navigationState.value.currentScreen
+
+    val sameScreen = false
+
+
+    val enterTransition =
+        fadeIn() +
+        scaleIn(initialScale = 0.7f)
+
+    val exitTransition =
+        fadeOut() +
+        scaleOut(targetScale = 0.7f)
+
+    val popEnterTransition =
+        fadeIn() +
+        scaleIn(initialScale = 0.7f)
+
+    val popExitTransition =
+        fadeOut() +
+        scaleOut(targetScale = 0.7f)
+
+    composable<S>(
+//        enterTransition = {if (!sameScreen) enterTransition else EnterTransition.None},
+//        exitTransition = {if (!sameScreen) exitTransition else ExitTransition.None},
+//        popEnterTransition = {if (!sameScreen) popEnterTransition else EnterTransition.None},
+//        popExitTransition = {if (!sameScreen) popExitTransition else ExitTransition.None}
+    ) { navBackStackEntry ->
+
         navigationViewModel.onEvent(NavigationEvent.SetCurrentScreen(screenObject))
         content(navBackStackEntry)
     }
