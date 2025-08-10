@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -41,7 +42,7 @@ fun StatusScreen(padding: PaddingValues, viewModel: SettingViewModel) {
     if (settingState.isLoading) {
         Box(
             modifier = Modifier
-                .background(Color.Black)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -55,6 +56,7 @@ fun StatusScreen(padding: PaddingValues, viewModel: SettingViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,

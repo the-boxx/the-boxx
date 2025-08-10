@@ -110,6 +110,7 @@ fun SettingsScreenMain(padding: PaddingValues, navController: NavController, vie
     Column(
         modifier = Modifier
             .padding(padding)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
         for (item in settingsScreenMainItems) {
@@ -182,6 +183,7 @@ fun SettingsScreenApps(padding: PaddingValues, navController: NavController, set
         Column (
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -195,6 +197,7 @@ fun SettingsScreenApps(padding: PaddingValues, navController: NavController, set
             LazyColumn(
                 modifier = Modifier
                     .padding(8.dp)
+                    .background(MaterialTheme.colorScheme.background)
                     .fillMaxSize(),
                 state = lazyListState,
                 contentPadding = padding,
@@ -326,6 +329,7 @@ fun SettingsScreenEmergencyUnlock(padding: PaddingValues, navController: NavCont
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(padding),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -399,6 +403,7 @@ fun SettingsScreenNfcTag(padding: PaddingValues, viewModel: SettingViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(padding),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -415,6 +420,7 @@ fun SettingsScreenRestartOnboarding(padding: PaddingValues, navController: NavCo
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(padding),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
