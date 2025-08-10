@@ -6,6 +6,7 @@ import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,11 +14,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,6 +49,7 @@ import androidx.navigation.NavController
 import com.theboxx.app.R
 import com.theboxx.app.SettingViewModel
 import com.theboxx.app.data.settings.SettingEvent
+import com.theboxx.app.data.system.accessibility.isAccessibilityServiceEnabled
 import com.theboxx.app.ui.navigation.NavigationScreens
 import com.theboxx.app.ui.navigation.NavigationViewModel
 import kotlinx.coroutines.delay
@@ -53,43 +65,45 @@ private fun Modifier.screenColumnModifier(padding: PaddingValues, scrollState: S
         .padding(14.dp))
 }
 @Composable
-fun OnboardingScreenMain(padding: PaddingValues, navController: NavController, viewModel: SettingViewModel) {
-    Column(
-        modifier = Modifier.screenColumnModifier(padding, rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(R.drawable.boxx_single),
-            contentDescription = "The Boxx Icon",
-            modifier = Modifier
-                .padding(24.dp)
-                .size(150.dp)
-        )
-        Text(
-            text = "Welcome to the Boxx",
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 28.sp,
-            modifier = textModifier
-        )
-        Text(
-            text = "With this app, we hope you will be able to build more self-control, " +
-                    "and grow to control your device instead of letting it control you.",
-            modifier = textModifier,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f)
-        )
-        Text(
-            text = "Let's get the app set up!",
-            modifier = textModifier,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f)
-        )
-        Button(
-            onClick = {
-                navController.navigate(NavigationScreens.Onboarding.Accessibility)
-            },
-            modifier = textModifier
+fun OnboardingScreenMain(navController: NavController) {
+    Scaffold { padding ->
+        Column(
+            modifier = Modifier.screenColumnModifier(padding, rememberScrollState()),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Setup")
+            Image(
+                painter = painterResource(R.drawable.boxx_single),
+                contentDescription = "The Boxx Icon",
+                modifier = Modifier
+                    .padding(24.dp)
+                    .size(150.dp)
+            )
+            Text(
+                text = "Welcome to the Boxx",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 28.sp,
+                modifier = textModifier
+            )
+            Text(
+                text = "With this app, we hope you will be able to build more self-control, " +
+                        "and grow to control your device instead of letting it control you.",
+                modifier = textModifier,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f)
+            )
+            Text(
+                text = "Let's get the app set up!",
+                modifier = textModifier,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f)
+            )
+            Button(
+                onClick = {
+                    navController.navigate(NavigationScreens.Onboarding.Accessibility)
+                },
+                modifier = textModifier
+            ) {
+                Text("Setup")
+            }
         }
     }
 }
@@ -154,14 +168,14 @@ fun TopOnboardingAppBar(navController: NavController, navigationViewModel: Navig
 }
 
 @Composable
-fun OnboardingScreenAccessibility(padding: PaddingValues, navController: NavController, viewModel: SettingViewModel, context: Context) {
+fun OnboardingScreenAccessibility(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel, context: Context) {
     val currentContext = LocalContext.current
     val hasAccessibilityPermission = remember {
         mutableStateOf(false)
     }
 
     LaunchedEffect(Unit) {
-        viewModel.viewModelScope.launch {
+        settingViewModel.viewModelScope.launch {
             while (!hasAccessibilityPermission.value) {
                 val permission = isAccessibilityServiceEnabled(context)
                 hasAccessibilityPermission.value = permission
@@ -172,176 +186,188 @@ fun OnboardingScreenAccessibility(padding: PaddingValues, navController: NavCont
 
     val textTransparency = if (hasAccessibilityPermission.value) 0.6f else 0.9f
 
-    Column(
-        modifier = Modifier.screenColumnModifier(padding, rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Accessibility Permission",
-            modifier = textModifier,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 24.sp
-        )
-        Text(
-            text = "This permission is required for the Boxx to block you from accessing apps " +
-                    "you've selected. Rest assured, that's the only thing it'll do.",
-            modifier = textModifier,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = textTransparency)
-        )
-        Text(
-            text = "Still not sure? Check out the source code for the app. Yes, " +
-                    "it's open source :)",
-            modifier = textModifier,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = textTransparency)
-        )
-        Text(
-            text = buildAnnotatedString {
-                withLink(
-                    LinkAnnotation.Url(
-                        "https://github.com/the-boxx/the-boxx"
+    Scaffold(
+        topBar = { TopOnboardingAppBar(navController, navigationViewModel, settingViewModel)}
+    ) { padding ->
+        Column(
+            modifier = Modifier.screenColumnModifier(padding, rememberScrollState()),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Accessibility Permission",
+                modifier = textModifier,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 24.sp
+            )
+            Text(
+                text = "This permission is required for the Boxx to block you from accessing apps " +
+                        "you've selected. Rest assured, that's the only thing it'll do.",
+                modifier = textModifier,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = textTransparency)
+            )
+            Text(
+                text = "Still not sure? Check out the source code for the app. Yes, " +
+                        "it's open source :)",
+                modifier = textModifier,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = textTransparency)
+            )
+            Text(
+                text = buildAnnotatedString {
+                    withLink(
+                        LinkAnnotation.Url(
+                            "https://github.com/the-boxx/the-boxx"
+                        )
+                    ) {
+                        append("Source Code")
+                    }
+                },
+                modifier = textModifier,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = textTransparency)
+            )
+            if (hasAccessibilityPermission.value) {
+                Card(
+                    modifier = textModifier
+                ) {
+                    Text(
+                        text = "Great, let's move on to the tutorial!",
+                        modifier = textModifier,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            } else {
+                Button(
+                    onClick = {
+                        currentContext.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    },
+                    modifier = textModifier
+                ) {
+                    Text("Give permission")
+                }
+            }
+            Button(
+                enabled = hasAccessibilityPermission.value,
+                onClick = {
+                    navController.navigate(NavigationScreens.Onboarding.Nfc)
+                },
+                modifier = textModifier
+            ) {
+                Text("Next")
+            }
+            if (hasAccessibilityPermission.value) {
+                Button(
+                    onClick = {
+                        settingViewModel.onEvent(SettingEvent.CompleteOnboarding())
+                        settingViewModel.onEvent(SettingEvent.SaveSetting)
+                        navController.navigate(NavigationScreens.Status)
+                    },
+                    colors = ButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        disabledContentColor = MaterialTheme.colorScheme.onSurface
                     )
                 ) {
-                    append("Source Code")
+                    Text("Skip tutorial")
                 }
-            },
-            modifier = textModifier,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = textTransparency)
-        )
-        if (hasAccessibilityPermission.value) {
-            Card(
-                modifier = textModifier
-            ) {
-                Text(
-                    text = "Great, let's move on to the tutorial!",
-                    modifier = textModifier,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        } else {
-            Button(
-                onClick = {
-                    currentContext.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                },
-                modifier = textModifier
-            ) {
-                Text("Give permission")
-            }
-        }
-        Button(
-            enabled = hasAccessibilityPermission.value,
-            onClick = {
-                navController.navigate(NavigationScreens.Onboarding.Nfc)
-            },
-            modifier = textModifier
-        ) {
-            Text("Next")
-        }
-        if (hasAccessibilityPermission.value) {
-            Button(
-                onClick = {
-                    viewModel.onEvent(SettingEvent.CompleteOnboarding())
-                    viewModel.onEvent(SettingEvent.SaveSetting)
-                    navController.navigate(NavigationScreens.Status)
-                },
-                colors = ButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    disabledContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            ) {
-                Text("Skip tutorial")
             }
         }
     }
 }
 
 @Composable
-fun OnboardingScreenNfcTag(padding: PaddingValues, navController: NavController, viewModel: SettingViewModel) {
-    val settingState = viewModel.settingState.collectAsState().value
+fun OnboardingScreenNfcTag(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+    val settingState = settingViewModel.settingState.collectAsState().value
     val isTagIdSet = settingState.tagId?.isNotEmpty() ?: false
 
     val textTransparency = if (isTagIdSet) 0.6f else 0.9f
 
-    Column(
-        modifier = Modifier.screenColumnModifier(padding, rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "NFC Tag",
-            modifier = textModifier,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 24.sp
-        )
-        Text(
-            text = "It's time to scan the tag you'll use to Boxx/Un-boxx your device. " +
-                    "Scan it now!",
-            modifier = textModifier,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = textTransparency)
-        )
+    Scaffold(
+        topBar = { TopOnboardingAppBar(navController, navigationViewModel, settingViewModel)}
+    ) { padding ->
+        Column(
+            modifier = Modifier.screenColumnModifier(padding, rememberScrollState()),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "NFC Tag",
+                modifier = textModifier,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 24.sp
+            )
+            Text(
+                text = "It's time to scan the tag you'll use to Boxx/Un-boxx your device. " +
+                        "Scan it now!",
+                modifier = textModifier,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = textTransparency)
+            )
 
-        if (isTagIdSet) {
-            Card(
+            if (isTagIdSet) {
+                Card(
+                    modifier = textModifier
+                ) {
+                    Text(
+                        text = "Excellent, let's set up your app restrictions!",
+                        modifier = textModifier,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Tag ID: ${settingState.tagId}",
+                        modifier = textModifier,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Button(
+                enabled = isTagIdSet,
+                onClick = {
+                    navController.navigate(NavigationScreens.Onboarding.Apps)
+                },
                 modifier = textModifier
             ) {
-                Text(
-                    text = "Excellent, let's set up your app restrictions!",
-                    modifier = textModifier,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Tag ID: ${settingState.tagId}",
-                    modifier = textModifier,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("Next")
             }
-        }
-
-        Button(
-            enabled = isTagIdSet,
-            onClick = {
-                navController.navigate(NavigationScreens.Onboarding.Apps)
-            },
-            modifier = textModifier
-        ) {
-            Text("Next")
         }
     }
 }
 
 @Composable
-fun OnboardingScreenApps(padding: PaddingValues, navController: NavController, settingViewModel: SettingViewModel, navigationViewModel: NavigationViewModel) {
-    SettingsScreenApps(padding, navController, settingViewModel, navigationViewModel)
+fun OnboardingScreenApps(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+    SettingsScreenApps(navController, navigationViewModel, settingViewModel)
 }
 
 @Composable
-fun OnboardingScreenEmergencyUnlock(padding: PaddingValues, navController: NavController, viewModel: SettingViewModel) {
-    Column(
-        modifier = Modifier.screenColumnModifier(padding, rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "All Set",
-            modifier = textModifier,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 24.sp
-        )
-        Text(
-            text = "That's it! We hope you enjoy using the app!",
-            modifier = textModifier
-        )
-        Button(
-            onClick = {
-                viewModel.onEvent(SettingEvent.CompleteOnboarding())
-                viewModel.onEvent(SettingEvent.SaveSetting)
-                navController.navigate(NavigationScreens.Status)
-            },
-            modifier = textModifier
+fun OnboardingScreenEmergencyUnlock(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+    Scaffold(
+        topBar = { TopOnboardingAppBar(navController, navigationViewModel, settingViewModel)}
+    ) { padding ->
+        Column(
+            modifier = Modifier.screenColumnModifier(padding, rememberScrollState()),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Finish")
+            Text(
+                text = "All Set",
+                modifier = textModifier,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 24.sp
+            )
+            Text(
+                text = "That's it! We hope you enjoy using the app!",
+                modifier = textModifier
+            )
+            Button(
+                onClick = {
+                    settingViewModel.onEvent(SettingEvent.CompleteOnboarding())
+                    settingViewModel.onEvent(SettingEvent.SaveSetting)
+                    navController.navigate(NavigationScreens.Status)
+                },
+                modifier = textModifier
+            ) {
+                Text("Finish")
+            }
         }
     }
 }
