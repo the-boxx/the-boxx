@@ -11,6 +11,8 @@ data class Setting(
 
     val isOnboarded: Boolean = false,
 
+    val emergencyUnlocks: Int = 0,
+
     @PrimaryKey(false)
     val id: Int = 0
 )

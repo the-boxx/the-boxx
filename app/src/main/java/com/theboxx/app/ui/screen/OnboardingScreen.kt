@@ -335,7 +335,7 @@ fun OnboardingScreenNfcTag(navController: NavController, navigationViewModel: Na
 
 @Composable
 fun OnboardingScreenApps(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
-    SettingsScreenApps(navController, navigationViewModel, settingViewModel)
+    SettingsScreenApps(navController, navigationViewModel, settingViewModel, isOnboarding = true)
 }
 
 @Composable

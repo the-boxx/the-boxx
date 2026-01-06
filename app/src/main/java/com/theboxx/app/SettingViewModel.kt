@@ -1,15 +1,10 @@
 package com.theboxx.app
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.cachedIn
 import com.theboxx.app.data.app.App
 import com.theboxx.app.data.app.AppState
 import com.theboxx.app.data.settings.Setting
@@ -17,11 +12,9 @@ import com.theboxx.app.data.db.SettingDatabase
 import com.theboxx.app.data.settings.SettingEvent
 import com.theboxx.app.data.settings.SettingState
 import com.theboxx.app.data.system.packages.UserApps
-import com.theboxx.app.data.system.packages.UserAppsPagingSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -68,30 +61,6 @@ class SettingViewModel(
     private val _installedAppListIsLoading = MutableLiveData(true)
     val installedAppListIsLoading: LiveData<Boolean> = _installedAppListIsLoading
 
-    val installedAppPager = MutableLiveData<Flow<PagingData<UserApps>>>()
-
-    fun loadInstalledApps(context: Context, appState: AppState) {
-        viewModelScope.launch {
-            _installedAppListIsLoading.value = true
-            _installedAppList.value = withContext(Dispatchers.IO) {
-                UserApps.getInstalledApps(context)
-            }
-            val installedApps = _installedAppList.value ?: emptyList()
-            val installedAppsCompiled = installedApps.map { app ->
-                app.copy(
-                    allowOperation = appState.apps.find { it.packageName == app.packageName }?.allowOperation ?: true
-                )
-            }
-            installedAppPager.value = Pager(
-                PagingConfig(pageSize = 30)
-            ) {
-                UserAppsPagingSource(installedAppsCompiled)
-            }.flow.cachedIn(viewModelScope)
-
-            _installedAppListIsLoading.value = false
-        }
-    }
-
     init {
         loadSettingsFromDatabase()
     }
@@ -108,6 +77,7 @@ class SettingViewModel(
                         boxxState = currentSettings?.boxxState ?: SettingState().settings.boxxState,
                         tagId = currentSettings?.tagId ?: "",
                         isOnboarded = currentSettings?.isOnboarded ?: false,
+                        emergencyUnlocks = currentSettings?.emergencyUnlocks ?: 0,
                         settings = currentSettings ?: SettingState().settings
                     )
                 }
@@ -171,16 +141,58 @@ class SettingViewModel(
                         val boxxState = _settingState.value.boxxState
                         val tagId = _settingState.value.tagId
                         val isOnboarded = _settingState.value.isOnboarded
+                        val emergencyUnlocks = _settingState.value.emergencyUnlocks
 
                         val setting = Setting(
                             boxxState = boxxState,
                             tagId = tagId,
-                            isOnboarded = isOnboarded
+                            isOnboarded = isOnboarded,
+                            emergencyUnlocks = emergencyUnlocks,
                         )
 
-                        Log.d("asand", "Saving setting: $setting")
-
                         settingDao.upsertSetting(setting)
+                    }
+                }
+
+                is SettingEvent.EmergencyUnlock -> {
+                    if (_settingState.value.isTrusted) {
+                        val emergencyUnlocks = _settingState.value.emergencyUnlocks + 1
+                        _settingState.update {
+                            it.copy(
+                                boxxState = false,
+                                emergencyUnlocks = emergencyUnlocks
+                            )
+                        }
+                    }
+                }
+
+                is SettingEvent.ResetAllSettings -> {
+                    _settingState.update {
+                        it.copy(
+                            boxxState = false,
+                            tagId = "",
+                            isOnboarded = false,
+                            emergencyUnlocks = 0,
+                        )
+                    }
+                    _appState.update {
+                        it.copy(
+                            apps = emptyList(),
+
+                            app = App("", true),
+                            packageName = "",
+                            allowOperation = true,
+
+                            installedApps = emptyList(),
+                            filteredInstalledApps = emptyList(),
+                            appFilterString = ""
+                        )
+                    }
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val appsToDelete = appDao.getBlockedApps()
+                        for (app in appsToDelete) {
+                            appDao.deleteApp(app)
+                        }
                     }
                 }
 
@@ -206,10 +218,87 @@ class SettingViewModel(
 
                 }
 
+                is SettingEvent.GetInstalledApps -> {
+                    _installedAppListIsLoading.value = true
+                    _installedAppList.value = withContext(Dispatchers.IO) {
+                        UserApps.getInstalledApps(event.context)
+                    }
+                    val installedApps = _installedAppList.value ?: emptyList()
+                    val mappedInstalledApps = installedApps.map { app ->
+                        app.copy(
+                            allowOperation = appState.value.apps.find { it.packageName == app.packageName }?.allowOperation
+                                ?: true
+                        )
+                    }
+
+                    _appState.update {
+                        it.copy (
+                            installedApps = mappedInstalledApps,
+                            filteredInstalledApps = it.filteredInstalledApps.ifEmpty { mappedInstalledApps }
+                        )
+                    }
+//                    installedAppPager.value = Pager(
+//                        PagingConfig(pageSize = 30)
+//                    ) {
+//                        UserAppsPagingSource(installedAppsCompiled)
+//                    }.flow.cachedIn(viewModelScope)
+//
+                    _installedAppListIsLoading.value = false
+                }
+
+                is SettingEvent.UpdateAppInList -> {
+                    val installedApps = _appState.value.installedApps.toMutableList()
+                    val filteredInstalledApps = _appState.value.filteredInstalledApps.toMutableList()
+                    val installedIndex = if (event.filtered) installedApps.indexOf(filteredInstalledApps[event.index])
+                        else event.index
+                    val filteredInstalledIndex = if (event.filtered) event.index
+                        else filteredInstalledApps.indexOf(installedApps[event.index])
+
+                    installedApps[installedIndex] = installedApps[installedIndex].copy(
+                        allowOperation = event.allowOperation
+                    )
+                    val updatedInstalledApps = installedApps.toList()
+                    if (filteredInstalledIndex != -1) {
+                        filteredInstalledApps[filteredInstalledIndex] =
+                            filteredInstalledApps[filteredInstalledIndex].copy(
+                                allowOperation = event.allowOperation
+                            )
+                    }
+                    val updatedFilteredInstalledApps = filteredInstalledApps.toList()
+
+                    _appState.update {
+                        it.copy(
+                            installedApps = updatedInstalledApps,
+                            filteredInstalledApps = updatedFilteredInstalledApps
+                        )
+                    }
+                }
+
                 is SettingEvent.GetApp -> {
                     _appState.update {
                         it.copy(
                             app = appDao.getApp(event.packageName) ?: App(event.packageName)
+                        )
+                    }
+                }
+
+                is SettingEvent.SetAppFilterString -> {
+                    _appState.update {
+                        it.copy(
+                            appFilterString = event.appFilterString
+                        )
+                    }
+                }
+                
+                is SettingEvent.FilterInstalledApps -> {
+                    val appFilterString = _appState.value.appFilterString.lowercase()
+                    val filteredApps = _appState.value.installedApps.filter {
+                        it.appName.lowercase().contains(appFilterString)
+//                                || it.packageName.lowercase().contains(appFilterString)
+                    }
+                    _appState.update {
+                        it.copy(
+                            filteredInstalledApps = filteredApps
                         )
                     }
                 }
@@ -220,7 +309,6 @@ class SettingViewModel(
                         val allowOperation = _appState.value.allowOperation
 
                         val app = App(packageName = packageName, allowOperation = allowOperation)
-                        Log.d("asand", "Saving app: $app")
                         if (allowOperation) {
                             val appToDelete = App(app.packageName, !app.allowOperation)
                             appDao.deleteApp(appToDelete) // Delete unused ones

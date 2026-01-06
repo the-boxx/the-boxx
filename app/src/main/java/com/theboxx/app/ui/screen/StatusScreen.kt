@@ -1,5 +1,7 @@
 package com.theboxx.app.ui.screen
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
@@ -25,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,22 +36,95 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.theboxx.app.BottomNavigationBar
 import com.theboxx.app.R
 import com.theboxx.app.SettingViewModel
 import com.theboxx.app.data.settings.SettingEvent
+import com.theboxx.app.data.system.accessibility.isAccessibilityServiceEnabled
 import com.theboxx.app.ui.navigation.NavigationViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatusScreen(navController: NavController, navigationViewModel: NavigationViewModel, settingViewModel: SettingViewModel) {
+fun StatusScreen(settingViewModel: SettingViewModel) {
     val settingState by settingViewModel.settingState.collectAsState()
+
+    val currentContext = LocalContext.current
+    val hasAccessibilityPermission = remember {
+        mutableStateOf(false)
+    }
+    val openAccessibilityDialog = remember { mutableStateOf<Boolean?>(null) }
+
+    LaunchedEffect(Unit) {
+        settingViewModel.viewModelScope.launch {
+            while (!hasAccessibilityPermission.value) {
+                val permission = isAccessibilityServiceEnabled(currentContext)
+                hasAccessibilityPermission.value = permission
+                delay(1000L)
+                if (openAccessibilityDialog.value == null) {
+                    if (settingState.isOnboarded) {
+                        openAccessibilityDialog.value = !hasAccessibilityPermission.value
+                    } else {
+                        openAccessibilityDialog.value = false
+                    }
+                }
+            }
+        }
+    }
+
+    if (openAccessibilityDialog.value == true) {
+        BasicAlertDialog(
+            onDismissRequest = {
+                openAccessibilityDialog.value = false
+            }
+        ) {
+            Card {
+                Text(
+                    text = "The Accessibility Service for The Boxx is disabled. Without this " +
+                            "permission, The Boxx cannot properly restrict your device. " +
+                            "Would you like to re-enable it?",
+                    modifier = Modifier
+                        .padding(12.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .padding(12.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            openAccessibilityDialog.value = false
+                        },
+                        modifier = Modifier
+                            .padding(12.dp)
+                    ) {
+                        Text("Not now")
+                    }
+                    Button(
+                        onClick = {
+                            currentContext.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            openAccessibilityDialog.value = false
+                        },
+                        modifier = Modifier
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "Take me there"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     Scaffold(
 //        bottomBar = { BottomNavigationBar(navController, navigationViewModel) }
     ) { padding ->

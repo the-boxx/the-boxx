@@ -123,6 +123,9 @@ class MainActivity() : ComponentActivity() {
 
     private fun processNfcIntent(intent: Intent) {
         val action = intent.action
+        if (NfcAdapter.ACTION_TAG_DISCOVERED == action) {
+            Toast.makeText(this, "Empty (or unsupported) tag scanned, please rewrite tag.", Toast.LENGTH_LONG).show()
+        }
         if (NfcAdapter.ACTION_NDEF_DISCOVERED == action ||
             NfcAdapter.ACTION_TECH_DISCOVERED == action) {
             val tag: Tag? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -144,7 +147,6 @@ class MainActivity() : ComponentActivity() {
 
                     settingViewModel.onEvent(SettingEvent.SetBoxxState(!settingViewModel.settingState.value.boxxState))
                     settingViewModel.onEvent(SettingEvent.SaveSetting)
-//                    Toast.makeText(this, "Switched Boxx State", Toast.LENGTH_SHORT).show()
                     settingViewModel.onEvent(SettingEvent.SetIsTrusted(false))
                 } else {
                     Toast.makeText(this, "Incorrect tag scanned", Toast.LENGTH_LONG).show()

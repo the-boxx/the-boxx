@@ -2,6 +2,7 @@ package com.theboxx.app
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
@@ -12,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
+@SuppressLint("AccessibilityPolicy")
 class AppLaunchDetectionService : AccessibilityService() {
 
     private val serviceJob = SupervisorJob()

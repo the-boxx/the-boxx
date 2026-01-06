@@ -1,20 +1,16 @@
 package com.theboxx.app.data.settings
 
-import com.theboxx.app.ui.navigation.NavigationScreens
-
 data class SettingState(
     // Defaults
-    val settings: Setting = Setting(false, "", false),
+    val settings: Setting = Setting(false, "", false, 0),
 
     val boxxState: Boolean = settings.boxxState,
 
-    val tagId: String? = "",
+    val tagId: String? = settings.tagId,
 
-    val hasSetNewTag: Boolean = true,
+    val emergencyUnlocks: Int = settings.emergencyUnlocks,
 
     val isOnboarded: Boolean = true,
-
-    val currentScreen: Any = NavigationScreens.Status,
 
     val isLoading: Boolean = true,
 
