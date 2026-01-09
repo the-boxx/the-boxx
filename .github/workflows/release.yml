@@ -1,10 +1,9 @@
-name: Android CI
+name: Android Nightly CI
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  release:
+    types:
+      - created
 
 jobs:
   build:
@@ -35,10 +34,11 @@ jobs:
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew app:assembleRelease
-      
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4.6.2
+
+    - name: Rename file
+      run: mv ./app/build/outputs/apk/release/app-release.apk ./app/build/outputs/apk/release/boxx-release.apk
+
+    - name: Upload artifact to release
+      uses: softprops/action-gh-release@v2
       with:
-        name: boxx-nightly.apk
-        path: ./app/build/outputs/apk/release/app-release.apk
-        compression-level: 0
+        files: ./app/build/outputs/apk/release/boxx-release.apk
