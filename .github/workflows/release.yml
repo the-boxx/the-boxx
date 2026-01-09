@@ -1,13 +1,13 @@
-name: Android Nightly CI
+name: Android Release CD
 
 on:
   release:
     types:
       - created
+      - draft_created
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
